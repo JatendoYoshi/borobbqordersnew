@@ -1,10 +1,6 @@
 /* =========================================================
-   BORO BURGERS - SAFE KIOSK SYSTEM (NO CRASH VERSION)
+   BORO BURGERS - FULL SAFE ORDER SYSTEM (FIXED)
    ========================================================= */
-
-/* =========================
-   FIREBASE IMPORTS (SAFE)
-========================= */
 
 import {
   doc,
@@ -57,7 +53,7 @@ const foods = [
   },
   {
     id: 6,
-    name: "Coca Cola",
+    name: "Coke",
     price: 2.49,
     category: "Drinks",
     image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e"
@@ -65,39 +61,42 @@ const foods = [
 ];
 
 /* =========================
-   GLOBAL STATE
+   STATE
 ========================= */
 
 const cart = [];
 
 /* =========================
-   SAFE DOM GETTER
+   DOM SAFE ACCESS
 ========================= */
 
-function get(id) {
-  const el = document.getElementById(id);
-  if (!el) console.warn("Missing element:", id);
-  return el;
-}
+const menu = document.getElementById("menu");
+const cartItems = document.getElementById("cartItems");
+const totalEl = document.getElementById("total");
+const cartCount = document.getElementById("cartCount");
 
 /* =========================
-   INITIALISE AFTER DOM LOAD
+   INIT (CRASH PROOF)
 ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
-  console.log("🍔 Boro Burgers Loaded");
+
+  if (!menu) {
+    console.error("❌ Menu element missing (#menu)");
+    return;
+  }
 
   renderFoods(foods);
   bindUI();
+
 });
 
 /* =========================
-   RENDER MENU (SAFE)
+   RENDER MENU
 ========================= */
 
 function renderFoods(items) {
 
-  const menu = get("menu");
   if (!menu) return;
 
   menu.innerHTML = "";
@@ -107,7 +106,7 @@ function renderFoods(items) {
     menu.innerHTML += `
       <div class="card">
 
-        <img src="${food.image}" alt="${food.name}" />
+        <img src="${food.image}" />
 
         <div class="card-content">
 
@@ -123,12 +122,12 @@ function renderFoods(items) {
 
       </div>
     `;
-
   });
+
 }
 
 /* =========================
-   CART SYSTEM
+   CART
 ========================= */
 
 window.addToCart = function(id) {
@@ -142,10 +141,6 @@ window.addToCart = function(id) {
 };
 
 function updateCart() {
-
-  const cartItems = get("cartItems");
-  const totalEl = get("total");
-  const cartCount = get("cartCount");
 
   if (!cartItems || !totalEl || !cartCount) return;
 
@@ -162,7 +157,7 @@ function updateCart() {
 
         <img src="${item.image}" />
 
-        <div class="cart-info">
+        <div>
 
           <h4>${item.name}</h4>
           <p>£${item.price.toFixed(2)}</p>
@@ -189,45 +184,29 @@ window.removeItem = function(index) {
 };
 
 /* =========================
-   UI CONTROLS
+   UI BINDING
 ========================= */
 
 function bindUI() {
 
-  const openCart = get("openCart");
-  const closeCart = get("closeCart");
-  const cartPanel = get("cart");
-  const overlay = get("overlay");
+  const openCart = document.getElementById("openCart");
+  const closeCart = document.getElementById("closeCart");
+  const cart = document.getElementById("cart");
+  const overlay = document.getElementById("overlay");
 
-  if (openCart) {
-    openCart.addEventListener("click", () => {
-      cartPanel?.classList.remove("hidden");
-      overlay?.classList.remove("hidden");
-    });
-  }
+  openCart?.addEventListener("click", () => {
+    cart?.classList.remove("hidden");
+    overlay?.classList.remove("hidden");
+  });
 
-  if (closeCart) {
-    closeCart.addEventListener("click", closeAll);
-  }
-
-  if (overlay) {
-    overlay.addEventListener("click", closeAll);
-  }
+  closeCart?.addEventListener("click", closeAll);
+  overlay?.addEventListener("click", closeAll);
 
   function closeAll() {
-
-    cartPanel?.classList.add("hidden");
-
-    const admin = get("adminPanel");
-    admin?.classList.add("hidden");
-
+    cart?.classList.add("hidden");
+    document.getElementById("adminPanel")?.classList.add("hidden");
     overlay?.classList.add("hidden");
-
   }
-
-  /* =========================
-     CATEGORY FILTER
-  ========================= */
 
   document.querySelectorAll(".category").forEach(btn => {
 
@@ -257,137 +236,65 @@ function bindUI() {
 ========================= */
 
 window.scrollToMenu = function() {
-  get("menu")?.scrollIntoView({ behavior: "smooth" });
+  document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
 };
 
 /* =========================
-   CHECKOUT (SAFE FIREBASE)
+   CHECKOUT (FIXED 100%)
 ========================= */
 
-const checkoutBtn = get("checkoutBtn");
+document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
-if (checkoutBtn) {
+  if (cart.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
 
-  checkoutBtn.addEventListener("click", async () => {
+  try {
 
-    if (cart.length === 0) {
-      alert("Cart is empty");
-      return;
+    /* SAFE COUNTER HANDLING */
+    const counterRef = doc(firebaseDB, "meta", "orderCounter");
+    const counterSnap = await getDoc(counterRef);
+
+    let current = 5000;
+
+    if (counterSnap.exists()) {
+      current = counterSnap.data().value;
     }
 
-    try {
+    const newOrderNumber = current + 1;
 
-      const counterRef = doc(firebaseDB, "meta", "orderCounter");
-      const counterSnap = await getDoc(counterRef);
+    await updateDoc(counterRef, {
+      value: newOrderNumber
+    });
 
-      let current = counterSnap.exists()
-        ? counterSnap.data().value
-        : 5000;
+    const total = cart.reduce((sum, i) => sum + i.price, 0);
 
-      let newOrderNumber = current + 1;
+    await firebaseAddDoc(
+      firebaseCollection(firebaseDB, "orders"),
+      {
+        orderNumber: newOrderNumber,
+        items: cart,
+        total,
+        status: "Preparing",
+        completed: false,
+        created: new Date()
+      }
+    );
 
-      await updateDoc(counterRef, {
-        value: newOrderNumber
-      });
+    alert(`Order #${newOrderNumber} placed successfully`);
 
-      const total = cart.reduce((sum, i) => sum + i.price, 0);
+    cart.length = 0;
+    updateCart();
 
-      await firebaseAddDoc(
-        firebaseCollection(firebaseDB, "orders"),
-        {
-          orderNumber: newOrderNumber,
-          items: cart,
-          total,
-          status: "Preparing",
-          completed: false,
-          created: new Date()
-        }
-      );
+    document.getElementById("cart")?.classList.add("hidden");
+    document.getElementById("overlay")?.classList.add("hidden");
 
-      alert(`Order #${newOrderNumber} placed`);
+  } catch (err) {
 
-      cart.length = 0;
-      updateCart();
-      get("cart")?.classList.add("hidden");
-      get("overlay")?.classList.add("hidden");
+    console.error("Firebase checkout error:", err);
+    alert("Firebase error — check console (F12)");
 
-    } catch (err) {
+  }
 
-      console.error("Checkout error:", err);
-      alert("Order failed - Firebase issue");
-
-    }
-
-  });
-
-}
-
-/* =========================
-   ADMIN SAFE HOOK (NO CRASH)
-========================= */
-
-const adminBtn = get("adminBtn");
-const adminPanel = get("adminPanel");
-const closeAdmin = get("closeAdmin");
-const ordersContainer = get("ordersContainer");
-
-if (adminBtn && adminPanel) {
-
-  adminBtn.addEventListener("click", () => {
-    adminPanel.classList.remove("hidden");
-    get("overlay")?.classList.remove("hidden");
-  });
-
-}
-
-if (closeAdmin) {
-
-  closeAdmin.addEventListener("click", () => {
-    adminPanel?.classList.add("hidden");
-    get("overlay")?.classList.add("hidden");
-  });
-
-}
-
-/* =========================
-   LIVE ORDERS (SAFE)
-========================= */
-
-try {
-
-  firebaseOnSnapshot(
-    firebaseCollection(firebaseDB, "orders"),
-    snapshot => {
-
-      if (!ordersContainer) return;
-
-      ordersContainer.innerHTML = "";
-
-      snapshot.forEach(docSnap => {
-
-        const order = docSnap.data();
-
-        ordersContainer.innerHTML += `
-          <div class="order-box">
-
-            <h3>ORDER #${order.orderNumber}</h3>
-
-            <p>Status: ${order.status || "N/A"}</p>
-
-            <p>Total: £${(order.total || 0).toFixed(2)}</p>
-
-            <div>
-              ${order.items?.map(i => `<p>• ${i.name}</p>`).join("") || ""}
-            </div>
-
-          </div>
-        `;
-
-      });
-
-    }
-  );
-
-} catch (e) {
-  console.warn("Admin listener failed safely:", e);
-}
+});
