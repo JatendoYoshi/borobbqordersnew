@@ -1,7 +1,4 @@
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
   collection,
@@ -10,7 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* =========================
-   FIREBASE CONFIG
+   FIREBASE INIT
 ========================= */
 
 const firebaseConfig = {
@@ -95,28 +92,38 @@ const cartCount = document.getElementById("cartCount");
 ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
-  renderMenu(foods);
-  bindUI();
+  renderMenu();
+  setupUI();
 });
 
 /* =========================
-   MENU RENDER
+   MENU
 ========================= */
 
-function renderMenu(items) {
+function renderMenu(items = foods) {
+
+  if (!menu) return;
 
   menu.innerHTML = "";
 
-  items.forEach(item => {
+  items.forEach(food => {
 
     menu.innerHTML += `
       <div class="card">
-        <img src="${item.image}" />
+
+        <img src="${food.image}" />
+
         <div class="card-content">
-          <h3>${item.name}</h3>
-          <p>£${item.price.toFixed(2)}</p>
-          <button onclick="addToCart(${item.id})">ADD</button>
+
+          <h3>${food.name}</h3>
+          <p>£${food.price.toFixed(2)}</p>
+
+          <button onclick="addToCart(${food.id})">
+            ADD TO ORDER
+          </button>
+
         </div>
+
       </div>
     `;
 
@@ -140,6 +147,8 @@ window.addToCart = function(id) {
 
 function updateCart() {
 
+  if (!cartItems) return;
+
   cartItems.innerHTML = "";
 
   let total = 0;
@@ -150,7 +159,8 @@ function updateCart() {
 
     cartItems.innerHTML += `
       <div class="cart-item">
-        <p>${item.name} - £${item.price.toFixed(2)}</p>
+        <span>${item.name}</span>
+        <span>£${item.price.toFixed(2)}</span>
         <button onclick="removeItem(${i})">X</button>
       </div>
     `;
@@ -171,15 +181,15 @@ window.removeItem = function(i) {
    UI
 ========================= */
 
-function bindUI() {
+function setupUI() {
 
   const openCart = document.getElementById("openCart");
   const closeCart = document.getElementById("closeCart");
-  const cart = document.getElementById("cart");
+  const cartPanel = document.getElementById("cart");
   const overlay = document.getElementById("overlay");
 
   openCart?.addEventListener("click", () => {
-    cart.classList.remove("hidden");
+    cartPanel.classList.remove("hidden");
     overlay.classList.remove("hidden");
   });
 
@@ -187,7 +197,7 @@ function bindUI() {
   overlay?.addEventListener("click", closeAll);
 
   function closeAll() {
-    cart.classList.add("hidden");
+    cartPanel.classList.add("hidden");
     overlay.classList.add("hidden");
   }
 
@@ -195,18 +205,15 @@ function bindUI() {
 
     btn.addEventListener("click", () => {
 
-      const cat = btn.dataset.category;
-
       document.querySelectorAll(".category")
         .forEach(b => b.classList.remove("active"));
 
       btn.classList.add("active");
 
-      if (cat === "All") {
-        renderMenu(foods);
-      } else {
-        renderMenu(foods.filter(f => f.category === cat));
-      }
+      const cat = btn.dataset.category;
+
+      if (cat === "All") renderMenu();
+      else renderMenu(foods.filter(f => f.category === cat));
 
     });
 
@@ -215,7 +222,7 @@ function bindUI() {
 }
 
 /* =========================
-   CHECKOUT (FIXED)
+   CHECKOUT (FINAL FIXED)
 ========================= */
 
 document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
@@ -227,18 +234,17 @@ document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
   try {
 
-    const total = cart.reduce((sum, i) => sum + i.price, 0);
-
     const orderData = {
       orderNumber: Math.floor(100000 + Math.random() * 900000),
       items: cart,
-      total,
+      total: cart.reduce((a, b) => a + b.price, 0),
       status: "Preparing",
-      completed: false,
       created: new Date()
     };
 
-    await addDoc(collection(db, "orders"), orderData);
+    const ref = await addDoc(collection(db, "orders"), orderData);
+
+    console.log("Order saved:", ref.id);
 
     alert("Order placed successfully!");
 
@@ -250,7 +256,7 @@ document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
   } catch (err) {
 
-    console.error("FIREBASE ERROR:", err);
+    console.error("🔥 FIREBASE ERROR:", err);
     alert(err.message);
 
   }
