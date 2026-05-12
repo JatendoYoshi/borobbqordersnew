@@ -1,83 +1,80 @@
-const foods = [
+import {
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* =========================
+   FOOD DATA
+========================= */
+
+const foods = [
   {
     id: 1,
     name: "Classic Smash",
     price: 7.99,
     category: "Burgers",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
   },
-
   {
     id: 2,
     name: "Double BBQ",
     price: 10.99,
     category: "Burgers",
-    image:
-      "https://images.unsplash.com/photo-1550547660-d9450f859349"
+    image: "https://images.unsplash.com/photo-1550547660-d9450f859349"
   },
-
   {
     id: 3,
     name: "Loaded Fries",
     price: 4.99,
     category: "Sides",
-    image:
-      "https://images.unsplash.com/photo-1573080496219-bb080dd4f877"
+    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877"
   },
-
   {
     id: 4,
     name: "Chicken Strips",
     price: 6.49,
     category: "Chicken",
-    image:
-      "https://images.unsplash.com/photo-1562967916-eb82221dfb36"
+    image: "https://images.unsplash.com/photo-1562967916-eb82221dfb36"
   },
-
   {
     id: 5,
     name: "Mega Chicken Burger",
     price: 8.99,
     category: "Chicken",
-    image:
-      "https://images.unsplash.com/photo-1606755962773-d324e0a13086"
+    image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086"
   },
-
   {
     id: 6,
     name: "Coca Cola",
     price: 2.49,
     category: "Drinks",
-    image:
-      "https://images.unsplash.com/photo-1629203851122-3726ecdf080e"
+    image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e"
   }
+];
 
-]
+/* =========================
+   DOM ELEMENTS
+========================= */
 
-const menu =
-  document.getElementById("menu")
+const menu = document.getElementById("menu");
+const cartItems = document.getElementById("cartItems");
+const totalEl = document.getElementById("total");
+const cartCount = document.getElementById("cartCount");
 
-const cartItems =
-  document.getElementById("cartItems")
+const cart = [];
 
-const totalEl =
-  document.getElementById("total")
-
-const cartCount =
-  document.getElementById("cartCount")
-
-const cart = []
+/* =========================
+   RENDER MENU
+========================= */
 
 function renderFoods(items) {
 
-  menu.innerHTML = ""
+  menu.innerHTML = "";
 
   items.forEach(food => {
 
     menu.innerHTML += `
-
       <div class="card">
 
         <img src="${food.image}" />
@@ -86,403 +83,180 @@ function renderFoods(items) {
 
           <h3>${food.name}</h3>
 
-          <div class="price">
-            £${food.price.toFixed(2)}
-          </div>
+          <div class="price">£${food.price.toFixed(2)}</div>
 
-          <button
-            class="add-btn"
-            onclick="addToCart(${food.id})"
-          >
+          <button onclick="addToCart(${food.id})">
             ADD TO ORDER
           </button>
 
         </div>
 
       </div>
-
-    `
-  })
+    `;
+  });
 }
 
-renderFoods(foods)
+renderFoods(foods);
+
+/* =========================
+   CART SYSTEM
+========================= */
 
 window.addToCart = function(id) {
 
-  const item =
-    foods.find(food => food.id === id)
+  const item = foods.find(f => f.id === id);
 
-  cart.push(item)
+  cart.push(item);
 
-  updateCart()
-}
+  updateCart();
+};
 
 function updateCart() {
 
-  cartItems.innerHTML = ""
+  cartItems.innerHTML = "";
 
-  let total = 0
+  let total = 0;
 
   cart.forEach((item, index) => {
 
-    total += item.price
+    total += item.price;
 
     cartItems.innerHTML += `
-
       <div class="cart-item">
 
         <img src="${item.image}" />
 
-        <div class="cart-info">
+        <div>
 
           <h4>${item.name}</h4>
 
           <p>£${item.price.toFixed(2)}</p>
 
-          <button
-            class="remove-btn"
-            onclick="removeItem(${index})"
-          >
+          <button onclick="removeItem(${index})">
             REMOVE
           </button>
 
         </div>
 
       </div>
+    `;
+  });
 
-    `
-  })
-
-  totalEl.innerText =
-    total.toFixed(2)
-
-  cartCount.innerText =
-    cart.length
+  totalEl.innerText = total.toFixed(2);
+  cartCount.innerText = cart.length;
 }
 
 window.removeItem = function(index) {
+  cart.splice(index, 1);
+  updateCart();
+};
 
-  cart.splice(index, 1)
+/* =========================
+   CART + UI CONTROLS
+========================= */
 
-  updateCart()
-}
-
-const openCart =
-  document.getElementById("openCart")
-
-const closeCart =
-  document.getElementById("closeCart")
-
-const cartDrawer =
-  document.getElementById("cart")
-
-const overlay =
-  document.getElementById("overlay")
+const openCart = document.getElementById("openCart");
+const closeCart = document.getElementById("closeCart");
+const cartDrawer = document.getElementById("cart");
+const overlay = document.getElementById("overlay");
 
 openCart.addEventListener("click", () => {
+  cartDrawer.classList.remove("hidden");
+  overlay.classList.remove("hidden");
+});
 
-  cartDrawer.classList.remove("hidden")
-
-  overlay.classList.remove("hidden")
-})
-
-closeCart.addEventListener(
-  "click",
-  closeEverything
-)
-
-overlay.addEventListener(
-  "click",
-  closeEverything
-)
+closeCart.addEventListener("click", closeEverything);
+overlay.addEventListener("click", closeEverything);
 
 function closeEverything() {
 
-  cartDrawer.classList.add("hidden")
+  cartDrawer.classList.add("hidden");
 
-  adminPanel.classList.add("hidden")
+  const adminPanel = document.getElementById("adminPanel");
+  if (adminPanel) adminPanel.classList.add("hidden");
 
-  overlay.classList.add("hidden")
+  overlay.classList.add("hidden");
 }
 
-document
-  .querySelectorAll(".category")
-  .forEach(button => {
+/* =========================
+   CATEGORY FILTER
+========================= */
 
-    button.addEventListener("click", () => {
+document.querySelectorAll(".category").forEach(btn => {
 
-      document
-        .querySelectorAll(".category")
-        .forEach(btn =>
-          btn.classList.remove("active")
-        )
+  btn.addEventListener("click", () => {
 
-      button.classList.add("active")
+    document.querySelectorAll(".category")
+      .forEach(b => b.classList.remove("active"));
 
-      const category =
-        button.dataset.category
+    btn.classList.add("active");
 
-      if(category === "All") {
+    const category = btn.dataset.category;
 
-        renderFoods(foods)
+    if (category === "All") {
+      renderFoods(foods);
+    } else {
+      renderFoods(foods.filter(f => f.category === category));
+    }
+  });
 
-      } else {
+});
 
-        const filtered =
-          foods.filter(
-            food =>
-              food.category === category
-          )
-
-        renderFoods(filtered)
-      }
-    })
-})
+/* =========================
+   SCROLL
+========================= */
 
 window.scrollToMenu = function() {
+  document.getElementById("menu")
+    .scrollIntoView({ behavior: "smooth" });
+};
 
-  document
-    .getElementById("menu")
-    .scrollIntoView({
-      behavior: "smooth"
-    })
-}
-import {
-  doc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+/* =========================
+   FIREBASE CHECKOUT (FIXED - SINGLE SYSTEM)
+========================= */
 
-document
-  .getElementById("checkoutBtn")
-  .addEventListener("click", async () => {
+document.getElementById("checkoutBtn").addEventListener("click", async () => {
 
-    if(cart.length === 0) {
-      alert("Cart is empty")
-      return
-    }
+  if (cart.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
 
-    try {
+  try {
 
-      const counterRef =
-        doc(firebaseDB, "meta", "orderCounter")
+    const counterRef = doc(firebaseDB, "meta", "orderCounter");
+    const counterSnap = await getDoc(counterRef);
 
-      const counterSnap =
-        await getDoc(counterRef)
+    let current = counterSnap.data().value;
+    let newOrderNumber = current + 1;
 
-      let current =
-        counterSnap.data().value
+    await updateDoc(counterRef, {
+      value: newOrderNumber
+    });
 
-      let newOrderNumber =
-        current + 1
-
-      await updateDoc(counterRef, {
-        value: newOrderNumber
-      })
-
-      const total =
-        cart.reduce(
-          (sum, item) => sum + item.price,
-          0
-        )
-
-      await firebaseAddDoc(
-        firebaseCollection(firebaseDB, "orders"),
-        {
-          orderNumber: newOrderNumber,
-          items: cart,
-          total,
-          status: "Preparing",
-          completed: false,
-          created: new Date()
-        }
-      )
-
-      alert(`Order #${newOrderNumber} placed`)
-
-      cart.length = 0
-      updateCart()
-      closeEverything()
-
-    } catch(err) {
-      console.error(err)
-      alert("Order failed")
-    }
-})
-
-    if(cart.length === 0) {
-
-      alert("Your cart is empty.")
-      return
-    }
-
-    try {
-
-      const total =
-        cart.reduce(
-          (sum, item) => sum + item.price,
-          0
-        )
-
-      const orderNumber =
-        Date.now().toString().slice(-4)
-
-      await firebaseAddDoc(
-
-        firebaseCollection(
-          firebaseDB,
-          "orders"
-        ),
-
-        {
-
-          orderNumber:
-            `50${orderNumber}`,
-
-          items: cart,
-
-          total,
-
-          status: "Preparing",
-
-          completed: false,
-
-          created: new Date()
-        }
-      )
-
-      alert(
-        `Order #50${orderNumber} placed successfully!`
-      )
-
-      cart.length = 0
-
-      updateCart()
-
-      closeEverything()
-
-    } catch(error) {
-
-      console.error(error)
-
-      alert(
-        "Firebase connection failed. Check your Firebase config."
-      )
-    }
-})
-  .addEventListener("click", async () => {
-
-    if(cart.length === 0) {
-
-      alert("Your cart is empty.")
-      return
-    }
-
-    const orderNumber =
-      Math.floor(Math.random() * 9000) + 1000
-
-    const total =
-      cart.reduce(
-        (sum, item) => sum + item.price,
-        0
-      )
+    const total = cart.reduce((sum, item) => sum + item.price, 0);
 
     await firebaseAddDoc(
-
-      firebaseCollection(
-        firebaseDB,
-        "orders"
-      ),
-
+      firebaseCollection(firebaseDB, "orders"),
       {
-
-        orderNumber,
-
+        orderNumber: newOrderNumber,
         items: cart,
-
         total,
-
+        status: "Preparing",
+        completed: false,
         created: new Date()
       }
-    )
+    );
 
-    alert(
-      `Order #${orderNumber} placed successfully!`
-    )
+    alert(`Order #${newOrderNumber} placed`);
 
-    cart.length = 0
+    cart.length = 0;
+    updateCart();
+    closeEverything();
 
-    updateCart()
+  } catch (err) {
+    console.error(err);
+    alert("Order failed");
+  }
 
-    closeEverything()
-})
-
-/* ADMIN */
-
-const adminBtn =
-  document.getElementById("adminBtn")
-
-const adminPanel =
-  document.getElementById("adminPanel")
-
-const closeAdmin =
-  document.getElementById("closeAdmin")
-
-const ordersContainer =
-  document.getElementById("ordersContainer")
-
-adminBtn.addEventListener("click", () => {
-
-  adminPanel.classList.remove("hidden")
-
-  overlay.classList.remove("hidden")
-})
-
-closeAdmin.addEventListener(
-  "click",
-  closeEverything
-)
-
-firebaseOnSnapshot(
-
-  firebaseCollection(
-    firebaseDB,
-    "orders"
-  ),
-
-  snapshot => {
-
-    ordersContainer.innerHTML = ""
-
-    snapshot.forEach(doc => {
-
-      const order = doc.data()
-
-      ordersContainer.innerHTML += `
-
-        <div class="order-box">
-
-          <h3>
-            ORDER #${order.orderNumber}
-          </h3>
-
-          <p>
-            Total:
-            £${order.total.toFixed(2)}
-          </p>
-
-          <br>
-
-          ${order.items.map(item => `
-
-            <p>
-              • ${item.name}
-            </p>
-
-          `).join("")}
-
-        </div>
-
-      `
-    })
-})
+});

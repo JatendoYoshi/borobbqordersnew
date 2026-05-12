@@ -5,24 +5,15 @@
 
   <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Boro Burgers Admin</title>
 
   <link rel="stylesheet" href="style.css">
 
-  <link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
-  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
 
 </head>
 
@@ -68,250 +59,151 @@
 
   </section>
 
-  <section
-    class="orders-grid"
-<h1 class="section-title">ACTIVE ORDERS</h1>
-<div id="activeOrders"></div>
+  <!-- ORIGINAL STRUCTURE PRESERVED -->
+  <section class="orders-grid">
 
-<h1 class="section-title">COMPLETED ORDERS</h1>
-<div id="completedOrders"></div>
-  ></section>
+    <h1 class="section-title">ACTIVE ORDERS</h1>
+    <div id="activeOrders"></div>
+
+    <h1 class="section-title">COMPLETED ORDERS</h1>
+    <div id="completedOrders"></div>
+
+  </section>
 
   <script type="module">
 
-    import {
-      initializeApp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
     import {
-
       getFirestore,
       collection,
       onSnapshot,
       doc,
       updateDoc
-
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
 
-    apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
-  authDomain: "borobbqorders.firebaseapp.com",
-  projectId: "borobbqorders",
-  storageBucket: "borobbqorders.firebasestorage.app",
-  messagingSenderId: "608958491192",
-  appId: "1:608958491192:web:a35df22ce7067f582d54cd",
-  measurementId: "G-GHRWMRM0PZ"
+      apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
+      authDomain: "borobbqorders.firebaseapp.com",
+      projectId: "borobbqorders",
+      storageBucket: "borobbqorders.firebasestorage.app",
+      messagingSenderId: "608958491192",
+      appId: "1:608958491192:web:a35df22ce7067f582d54cd",
+      measurementId: "G-GHRWMRM0PZ"
 
-    }
+    };
 
-    const app =
-      initializeApp(firebaseConfig)
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    const db =
-      getFirestore(app)
+    const orderCount = document.getElementById("orderCount");
+    const revenue = document.getElementById("revenue");
 
-    const ordersContainer =
-      document.getElementById("ordersContainer")
+    /* =========================
+       LIVE ORDERS (FIXED ONCE)
+    ========================== */
 
-    const orderCount =
-      document.getElementById("orderCount")
+    onSnapshot(collection(db, "orders"), (snapshot) => {
 
-    const revenue =
-      document.getElementById("revenue")
+      const active = document.getElementById("activeOrders");
+      const completed = document.getElementById("completedOrders");
 
-onSnapshot(
-  collection(db, "orders"),
-  snapshot => {
+      active.innerHTML = "";
+      completed.innerHTML = "";
 
-    const active =
-      document.getElementById("activeOrders")
+      let totalRevenue = 0;
 
-    const completed =
-      document.getElementById("completedOrders")
+      orderCount.innerText = snapshot.size;
 
-    active.innerHTML = ""
-    completed.innerHTML = ""
+      snapshot.forEach((docSnap) => {
 
-    snapshot.forEach(docSnap => {
+        const order = docSnap.data();
 
-      const order = docSnap.data()
+        totalRevenue += order.total || 0;
 
-      const card = `
+        const card = `
 
-        <div class="admin-order-card">
+          <div class="admin-order-card">
 
-          <h2>ORDER #${order.orderNumber}</h2>
+            <div class="order-top">
 
-          <p>Status: ${order.status}</p>
+              <h2>ORDER #${order.orderNumber}</h2>
 
-          <p>Total: £${order.total.toFixed(2)}</p>
-
-          ${order.items.map(i => `
-            <p>• ${i.name}</p>
-          `).join("")}
-
-          <div class="admin-buttons">
-
-            <button onclick="setStatus('${docSnap.id}','Preparing')">
-              Preparing
-            </button>
-
-            <button onclick="setStatus('${docSnap.id}','Ready')">
-              Ready
-            </button>
-
-            <button onclick="completeOrder('${docSnap.id}')">
-              Complete
-            </button>
-
-          </div>
-
-        </div>
-
-      `
-
-      if(order.completed) {
-        completed.innerHTML += card
-      } else {
-        active.innerHTML += card
-      }
-    })
-  }
-)
-
-          totalRevenue += order.total
-
-          ordersContainer.innerHTML += `
-
-            <div class="admin-order-card">
-
-              <div class="order-top">
-
-                <h2>
-                  ORDER #${order.orderNumber}
-                </h2>
-
-                <span class="status">
-                  ${order.status}
-                </span>
-
-              </div>
-
-              <div class="items">
-
-                ${order.items.map(item => `
-
-                  <div class="admin-item">
-
-                    <p>${item.name}</p>
-
-                    <strong>
-                      £${item.price.toFixed(2)}
-                    </strong>
-
-                  </div>
-
-                `).join("")}
-
-              </div>
-
-              <div class="order-total">
-
-                TOTAL:
-                £${order.total.toFixed(2)}
-
-              </div>
-
-              <div class="admin-buttons">
-
-                <button
-                  onclick="updateStatus(
-                    '${docSnap.id}',
-                    'Preparing'
-                  )"
-                >
-                  PREPARING
-                </button>
-
-                <button
-                  onclick="updateStatus(
-                    '${docSnap.id}',
-                    'Ready'
-                  )"
-                >
-                  READY
-                </button>
-
-                <button
-                  onclick="completeOrder(
-                    '${docSnap.id}'
-                  )"
-                >
-                  COMPLETE
-                </button>
-
-              </div>
+              <span class="status">${order.status}</span>
 
             </div>
 
-          `
-        })
+            <div class="items">
 
-        revenue.innerText =
-          `£${totalRevenue.toFixed(2)}`
-      }
-    )
+              ${order.items.map(item => `
+                <div class="admin-item">
+                  <p>${item.name}</p>
+                  <strong>£${item.price.toFixed(2)}</strong>
+                </div>
+              `).join("")}
 
-    window.updateStatus =
-      async function(id, status) {
+            </div>
 
-      const orderRef =
-        doc(db, "orders", id)
+            <div class="order-total">
+              TOTAL: £${order.total.toFixed(2)}
+            </div>
 
-      await updateDoc(
-        orderRef,
-        {
-          status
+            <div class="admin-buttons">
+
+              <button onclick="setStatus('${docSnap.id}','Preparing')">
+                PREPARING
+              </button>
+
+              <button onclick="setStatus('${docSnap.id}','Ready')">
+                READY
+              </button>
+
+              <button onclick="completeOrder('${docSnap.id}')">
+                COMPLETE
+              </button>
+
+            </div>
+
+          </div>
+
+        `;
+
+        if (order.completed) {
+          completed.innerHTML += card;
+        } else {
+          active.innerHTML += card;
         }
-      )
-    }
 
-    window.completeOrder =
-      async function(id) {
+      });
 
-      const orderRef =
-        doc(db, "orders", id)
+      revenue.innerText = `£${totalRevenue.toFixed(2)}`;
 
-      await updateDoc(
-        orderRef,
-        {
-          completed: true,
-          status: "Completed"
-        }
-      )
-    }
+    });
+
+    /* =========================
+       ADMIN ACTIONS (FIXED)
+    ========================== */
+
+    window.setStatus = async function(id, status) {
+
+      await updateDoc(doc(db, "orders", id), {
+        status
+      });
+
+    };
+
+    window.completeOrder = async function(id) {
+
+      await updateDoc(doc(db, "orders", id), {
+        status: "Completed",
+        completed: true
+      });
+
+    };
 
   </script>
 
-  window.setStatus = async function(id, status) {
-
-  await updateDoc(
-    doc(db, "orders", id),
-    { status }
-  )
-}
-
-window.completeOrder = async function(id) {
-
-  await updateDoc(
-    doc(db, "orders", id),
-    {
-      status: "Completed",
-      completed: true
-    }
-  )
-}
-
 </body>
+
 </html>
