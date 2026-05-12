@@ -111,12 +111,22 @@
     }
  
     /* =========================
-       BUILD ORDER CARD
+       LIVE LISTENER
     ========================= */
  
-    function buildCard(docId, order) {
+    async function setStatus(id, status, completed) {
+      await updateDoc(doc(db, "orders", id), { status, completed });
+    }
  
+    function createCard(docId, order) {
       const isCompleted = order.completed === true;
+ 
+      const card = document.createElement("div");
+      card.className = "admin-order-card";
+ 
+      const createdAt = order.created?.toDate
+        ? order.created.toDate().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+        : "";
  
       const itemsHTML = (order.items || []).map(item => `
         <div class="admin-item">
@@ -125,37 +135,46 @@
         </div>
       `).join("");
  
-      const createdAt = order.created?.toDate
-        ? order.created.toDate().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
-        : "";
+      const statusCls = order.status === "Preparing" ? "preparing"
+                      : order.status === "Ready"     ? "ready"
+                      : "completed";
  
-      const adminButtons = isCompleted ? "" : `
-        <div class="admin-buttons">
-          <button data-id="${docId}" data-action="preparing">PREPARING</button>
-          <button data-id="${docId}" data-action="ready">READY</button>
-          <button data-id="${docId}" data-action="complete">COMPLETE ✓</button>
-        </div>
-      `;
- 
-      return `
-        <div class="admin-order-card" data-doc="${docId}">
-          <div class="order-top">
-            <h2>ORDER #${order.orderNumber ?? "—"}</h2>
-            <div style="display:flex;align-items:center;gap:10px;">
-              ${createdAt ? `<span style="font-size:0.8rem;color:#aaa;">${createdAt}</span>` : ""}
-              ${statusBadge(order.status ?? "Preparing")}
-            </div>
+      card.innerHTML = `
+        <div class="order-top">
+          <h2>ORDER #${order.orderNumber ?? "—"}</h2>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${createdAt ? `<span style="font-size:0.8rem;color:#aaa;">${createdAt}</span>` : ""}
+            <span class="status-badge ${statusCls}">${order.status ?? "Preparing"}</span>
           </div>
-          <div class="items">${itemsHTML}</div>
-          <div class="order-total">TOTAL: £${(order.total ?? 0).toFixed(2)}</div>
-          ${adminButtons}
         </div>
+        <div class="items">${itemsHTML}</div>
+        <div class="order-total">TOTAL: £${(order.total ?? 0).toFixed(2)}</div>
       `;
-    }
  
-    /* =========================
-       LIVE LISTENER
-    ========================= */
+      if (!isCompleted) {
+        const btns = document.createElement("div");
+        btns.className = "admin-buttons";
+ 
+        const preparing = document.createElement("button");
+        preparing.textContent = "PREPARING";
+        preparing.addEventListener("click", () => setStatus(docId, "Preparing", false));
+ 
+        const ready = document.createElement("button");
+        ready.textContent = "READY";
+        ready.addEventListener("click", () => setStatus(docId, "Ready", false));
+ 
+        const complete = document.createElement("button");
+        complete.textContent = "COMPLETE ✓";
+        complete.addEventListener("click", () => setStatus(docId, "Completed", true));
+ 
+        btns.appendChild(preparing);
+        btns.appendChild(ready);
+        btns.appendChild(complete);
+        card.appendChild(btns);
+      }
+ 
+      return card;
+    }
  
     onSnapshot(collection(db, "orders"), (snapshot) => {
  
@@ -173,36 +192,20 @@
         totalRevenue += order.total ?? 0;
  
         if (order.completed === true) {
-          completedEl.innerHTML += buildCard(docSnap.id, order);
+          completedEl.appendChild(createCard(docSnap.id, order));
         } else {
-          activeEl.innerHTML += buildCard(docSnap.id, order);
+          activeEl.appendChild(createCard(docSnap.id, order));
         }
       });
  
-      if (!activeEl.innerHTML) {
+      if (!activeEl.hasChildNodes()) {
         activeEl.innerHTML = `<p class="empty-msg">No active orders right now.</p>`;
       }
-      if (!completedEl.innerHTML) {
+      if (!completedEl.hasChildNodes()) {
         completedEl.innerHTML = `<p class="empty-msg">No completed orders yet.</p>`;
       }
  
       revenueEl.innerText = `£${totalRevenue.toFixed(2)}`;
- 
-      // Attach button listeners after render
-      document.querySelectorAll(".admin-buttons button").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id     = btn.dataset.id;
-          const action = btn.dataset.action;
- 
-          if (action === "preparing") {
-            await updateDoc(doc(db, "orders", id), { status: "Preparing", completed: false });
-          } else if (action === "ready") {
-            await updateDoc(doc(db, "orders", id), { status: "Ready", completed: false });
-          } else if (action === "complete") {
-            await updateDoc(doc(db, "orders", id), { status: "Completed", completed: true });
-          }
-        });
-      });
  
     });
  
@@ -210,3 +213,4 @@
  
 </body>
 </html>
+ 
