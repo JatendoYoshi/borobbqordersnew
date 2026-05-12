@@ -377,6 +377,17 @@
       if (!cntPreparing) colPreparing.innerHTML = `<p class="empty-msg">No orders preparing.</p>`;
       if (!cntReady)     colReady.innerHTML     = `<p class="empty-msg">No orders ready.</p>`;
       if (!cntCompleted) colCompleted.innerHTML = `<p class="empty-msg">No completed orders.</p>`;
+      // Auto-delete oldest completed orders once cap of 5 is exceeded
+      const completedDocs = docs.filter(d => d.data().completed === true);
+      completedDocs.sort((a, b) => {
+        const tA = a.data().created?.toMillis?.() ?? 0;
+        const tB = b.data().created?.toMillis?.() ?? 0;
+        return tA - tB; // oldest first
+      });
+      if (completedDocs.length > 5) {
+        const toDelete = completedDocs.slice(0, completedDocs.length - 5);
+        toDelete.forEach(d => deleteDoc(doc(db, "orders", d.id)));
+      }
 
       document.getElementById("countPreparing").textContent = cntPreparing;
       document.getElementById("countReady").textContent     = cntReady;
