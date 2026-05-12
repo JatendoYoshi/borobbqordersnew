@@ -1,48 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
- 
+
 <head>
- 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Boro Burgers Admin</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
- 
+
   <style>
-    .status-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 4px;
+
+    .kanban {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .kanban-col {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 16px;
+      min-height: 300px;
+    }
+
+    .kanban-col-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #2a2a2a;
+    }
+
+    .kanban-col-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      margin: 0;
+      color: #fff;
+    }
+
+    .col-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .col-dot.preparing { background: #f5c400; }
+    .col-dot.ready     { background: #00c853; }
+    .col-dot.completed { background: #888; }
+
+    .col-count {
+      margin-left: auto;
+      background: #2a2a2a;
+      color: #aaa;
+      font-size: 0.8rem;
       font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .admin-order-card {
+      background: #222;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border-left: 4px solid #333;
+    }
+    .admin-order-card.preparing { border-left-color: #f5c400; }
+    .admin-order-card.ready     { border-left-color: #00c853; }
+    .admin-order-card.completed { border-left-color: #555; opacity: 0.75; }
+
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .order-top h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      margin: 0;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .order-time {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .admin-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 3px 0;
+      border-bottom: 1px solid #2a2a2a;
+      color: #ccc;
+    }
+
+    .order-total {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      margin-top: 10px;
+      color: #fff;
+    }
+
+    .admin-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .admin-buttons button {
+      flex: 1;
+      min-width: 70px;
+      padding: 6px 8px;
+      font-family: 'Bebas Neue', sans-serif;
       font-size: 0.85rem;
       letter-spacing: 1px;
-      text-transform: uppercase;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: opacity 0.15s;
     }
-    .status-badge.preparing {
-      background: #f5c400;
-      color: #111;
+    .admin-buttons button:hover { opacity: 0.8; }
+
+    .btn-preparing { background: #f5c400; color: #111; }
+    .btn-ready     { background: #00c853; color: #fff; }
+    .btn-complete  { background: #333; color: #fff; border: 1px solid #555 !important; }
+    .btn-undo      { background: #c0392b; color: #fff; width: 100%; flex: unset; }
+
+    .admin-buttons button.active-status {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
     }
-    .status-badge.ready {
-      background: #00c853;
-      color: #fff;
-    }
-    .status-badge.completed {
-      background: #555;
-      color: #fff;
-    }
+
     .empty-msg {
-      color: #888;
+      color: #555;
       font-style: italic;
-      padding: 12px 0;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 24px 0;
     }
+
+    @media (max-width: 768px) {
+      .kanban { grid-template-columns: 1fr; }
+    }
+
   </style>
- 
 </head>
- 
+
 <body>
- 
+
   <header class="admin-topbar">
     <div>
       <h1>🍔 BORO BURGERS</h1>
@@ -52,7 +168,7 @@
       <button class="back-btn">← RETURN TO KIOSK</button>
     </a>
   </header>
- 
+
   <section class="stats">
     <div class="stat-card">
       <h2 id="orderCount">0</h2>
@@ -63,17 +179,40 @@
       <p>REVENUE</p>
     </div>
   </section>
- 
-  <section class="orders-grid">
-    <h1 class="section-title">ACTIVE ORDERS</h1>
-    <div id="activeOrders"></div>
- 
-    <h1 class="section-title">COMPLETED ORDERS</h1>
-    <div id="completedOrders"></div>
-  </section>
- 
+
+  <div class="kanban">
+
+    <div class="kanban-col">
+      <div class="kanban-col-header">
+        <div class="col-dot preparing"></div>
+        <h2>PREPARING</h2>
+        <span class="col-count" id="countPreparing">0</span>
+      </div>
+      <div id="colPreparing"></div>
+    </div>
+
+    <div class="kanban-col">
+      <div class="kanban-col-header">
+        <div class="col-dot ready"></div>
+        <h2>READY</h2>
+        <span class="col-count" id="countReady">0</span>
+      </div>
+      <div id="colReady"></div>
+    </div>
+
+    <div class="kanban-col">
+      <div class="kanban-col-header">
+        <div class="col-dot completed"></div>
+        <h2>COMPLETED</h2>
+        <span class="col-count" id="countCompleted">0</span>
+      </div>
+      <div id="colCompleted"></div>
+    </div>
+
+  </div>
+
   <script type="module">
- 
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getFirestore,
@@ -82,7 +221,7 @@
       doc,
       updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
- 
+
     const firebaseConfig = {
       apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
       authDomain: "borobbqorders.firebaseapp.com",
@@ -92,125 +231,131 @@
       appId: "1:608958491192:web:a35df22ce7067f582d54cd",
       measurementId: "G-GHRWMRM0PZ"
     };
- 
+
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
- 
+    const db  = getFirestore(app);
+
     const orderCountEl = document.getElementById("orderCount");
     const revenueEl    = document.getElementById("revenue");
- 
-    /* =========================
-       STATUS BADGE HELPER
-    ========================= */
- 
-    function statusBadge(status) {
-      const cls = status === "Preparing" ? "preparing"
-                : status === "Ready"     ? "ready"
-                : "completed";
-      return `<span class="status-badge ${cls}">${status}</span>`;
-    }
- 
-    /* =========================
-       LIVE LISTENER
-    ========================= */
- 
+
     async function setStatus(id, status, completed) {
       await updateDoc(doc(db, "orders", id), { status, completed });
     }
- 
+
     function createCard(docId, order) {
+
+      const status      = order.status ?? "Preparing";
       const isCompleted = order.completed === true;
- 
+      const statusCls   = isCompleted        ? "completed"
+                        : status === "Ready" ? "ready"
+                        : "preparing";
+
       const card = document.createElement("div");
-      card.className = "admin-order-card";
- 
+      card.className = `admin-order-card ${statusCls}`;
+
       const createdAt = order.created?.toDate
         ? order.created.toDate().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
         : "";
- 
+
       const itemsHTML = (order.items || []).map(item => `
         <div class="admin-item">
-          <p>${item.name}</p>
+          <span>${item.name}</span>
           <strong>£${(item.price ?? 0).toFixed(2)}</strong>
         </div>
       `).join("");
- 
-      const statusCls = order.status === "Preparing" ? "preparing"
-                      : order.status === "Ready"     ? "ready"
-                      : "completed";
- 
+
       card.innerHTML = `
         <div class="order-top">
           <h2>ORDER #${order.orderNumber ?? "—"}</h2>
-          <div style="display:flex;align-items:center;gap:10px;">
-            ${createdAt ? `<span style="font-size:0.8rem;color:#aaa;">${createdAt}</span>` : ""}
-            <span class="status-badge ${statusCls}">${order.status ?? "Preparing"}</span>
-          </div>
         </div>
+        ${createdAt ? `<div class="order-time">Placed at ${createdAt}</div>` : ""}
         <div class="items">${itemsHTML}</div>
         <div class="order-total">TOTAL: £${(order.total ?? 0).toFixed(2)}</div>
       `;
- 
-      if (!isCompleted) {
-        const btns = document.createElement("div");
-        btns.className = "admin-buttons";
- 
-        const preparing = document.createElement("button");
-        preparing.textContent = "PREPARING";
-        preparing.addEventListener("click", () => setStatus(docId, "Preparing", false));
- 
-        const ready = document.createElement("button");
-        ready.textContent = "READY";
-        ready.addEventListener("click", () => setStatus(docId, "Ready", false));
- 
-        const complete = document.createElement("button");
-        complete.textContent = "COMPLETE ✓";
-        complete.addEventListener("click", () => setStatus(docId, "Completed", true));
- 
-        btns.appendChild(preparing);
-        btns.appendChild(ready);
-        btns.appendChild(complete);
-        card.appendChild(btns);
+
+      const btns = document.createElement("div");
+      btns.className = "admin-buttons";
+
+      if (isCompleted) {
+
+        const undo = document.createElement("button");
+        undo.className   = "btn-undo";
+        undo.textContent = "↩ UNDO";
+        undo.addEventListener("click", () => setStatus(docId, "Preparing", false));
+        btns.appendChild(undo);
+
+      } else {
+
+        const preparingBtn = document.createElement("button");
+        preparingBtn.className   = "btn-preparing" + (status === "Preparing" ? " active-status" : "");
+        preparingBtn.textContent = "PREPARING";
+        preparingBtn.addEventListener("click", () => setStatus(docId, "Preparing", false));
+
+        const readyBtn = document.createElement("button");
+        readyBtn.className   = "btn-ready" + (status === "Ready" ? " active-status" : "");
+        readyBtn.textContent = "READY";
+        readyBtn.addEventListener("click", () => setStatus(docId, "Ready", false));
+
+        const completeBtn = document.createElement("button");
+        completeBtn.className   = "btn-complete";
+        completeBtn.textContent = "COMPLETE ✓";
+        completeBtn.addEventListener("click", () => setStatus(docId, "Completed", true));
+
+        btns.appendChild(preparingBtn);
+        btns.appendChild(readyBtn);
+        btns.appendChild(completeBtn);
+
       }
- 
+
+      card.appendChild(btns);
       return card;
     }
- 
+
     onSnapshot(collection(db, "orders"), (snapshot) => {
- 
-      const activeEl    = document.getElementById("activeOrders");
-      const completedEl = document.getElementById("completedOrders");
- 
-      activeEl.innerHTML    = "";
-      completedEl.innerHTML = "";
- 
+
+      const colPreparing = document.getElementById("colPreparing");
+      const colReady     = document.getElementById("colReady");
+      const colCompleted = document.getElementById("colCompleted");
+
+      colPreparing.innerHTML = "";
+      colReady.innerHTML     = "";
+      colCompleted.innerHTML = "";
+
       let totalRevenue = 0;
-      orderCountEl.innerText = snapshot.size;
- 
+      let cntPreparing = 0;
+      let cntReady     = 0;
+      let cntCompleted = 0;
+
       snapshot.forEach((docSnap) => {
         const order = docSnap.data();
         totalRevenue += order.total ?? 0;
- 
+
         if (order.completed === true) {
-          completedEl.appendChild(createCard(docSnap.id, order));
+          colCompleted.appendChild(createCard(docSnap.id, order));
+          cntCompleted++;
+        } else if (order.status === "Ready") {
+          colReady.appendChild(createCard(docSnap.id, order));
+          cntReady++;
         } else {
-          activeEl.appendChild(createCard(docSnap.id, order));
+          colPreparing.appendChild(createCard(docSnap.id, order));
+          cntPreparing++;
         }
       });
- 
-      if (!activeEl.hasChildNodes()) {
-        activeEl.innerHTML = `<p class="empty-msg">No active orders right now.</p>`;
-      }
-      if (!completedEl.hasChildNodes()) {
-        completedEl.innerHTML = `<p class="empty-msg">No completed orders yet.</p>`;
-      }
- 
-      revenueEl.innerText = `£${totalRevenue.toFixed(2)}`;
- 
+
+      if (!cntPreparing) colPreparing.innerHTML = `<p class="empty-msg">No orders preparing.</p>`;
+      if (!cntReady)     colReady.innerHTML     = `<p class="empty-msg">No orders ready.</p>`;
+      if (!cntCompleted) colCompleted.innerHTML = `<p class="empty-msg">No completed orders.</p>`;
+
+      document.getElementById("countPreparing").textContent = cntPreparing;
+      document.getElementById("countReady").textContent     = cntReady;
+      document.getElementById("countCompleted").textContent = cntCompleted;
+
+      orderCountEl.innerText = snapshot.size;
+      revenueEl.innerText    = `£${totalRevenue.toFixed(2)}`;
+
     });
- 
+
   </script>
- 
+
 </body>
 </html>
- 
