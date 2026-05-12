@@ -262,15 +262,15 @@
 
       const itemsHTML = (order.items || []).map(item => {
         const customs = item.customisations?.length
-          ? `<ul style="margin:5px 0 6px 18px;padding:0;font-size:0.92rem;color:#bbb;line-height:1.7;">
+          ? `<ul style="margin:6px 0 8px 20px;padding:0;font-size:1.05rem;color:#bbb;line-height:1.9;">
               ${item.customisations.map(c => `<li>${c}</li>`).join("")}
              </ul>`
           : "";
         return `
           <div class="admin-item" style="flex-direction:column;align-items:flex-start;">
-            <div style="display:flex;justify-content:space-between;width:100%;">
-              <span style="font-size:1rem;">${item.name}</span>
-              <strong style="font-size:1rem;">£${(item.price ?? 0).toFixed(2)}</strong>
+            <div style="display:flex;justify-content:space-between;width:100%;margin-bottom:2px;">
+              <span style="font-size:1.1rem;font-weight:bold;color:#fff;">${item.name}</span>
+              <strong style="font-size:1.1rem;">£${(item.price ?? 0).toFixed(2)}</strong>
             </div>
             ${customs}
           </div>
