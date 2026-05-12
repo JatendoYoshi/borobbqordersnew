@@ -83,18 +83,25 @@
 
       getFirestore,
       collection,
-      onSnapshot
+      onSnapshot,
+      doc,
+      updateDoc
 
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
     const firebaseConfig = {
-  apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
-  authDomain: "borobbqorders.firebaseapp.com",
-  projectId: "borobbqorders",
-  storageBucket: "borobbqorders.firebasestorage.app",
-  messagingSenderId: "608958491192",
-  appId: "1:608958491192:web:a35df22ce7067f582d54cd",
-  measurementId: "G-GHRWMRM0PZ"
+
+      apiKey: "YOUR_API_KEY",
+
+      authDomain: "YOUR_AUTH_DOMAIN",
+
+      projectId: "YOUR_PROJECT_ID",
+
+      storageBucket: "YOUR_STORAGE_BUCKET",
+
+      messagingSenderId: "YOUR_MESSAGING_ID",
+
+      appId: "YOUR_APP_ID"
 
     }
 
@@ -126,9 +133,9 @@
         orderCount.innerText =
           snapshot.size
 
-        snapshot.forEach(doc => {
+        snapshot.forEach(docSnap => {
 
-          const order = doc.data()
+          const order = docSnap.data()
 
           totalRevenue += order.total
 
@@ -143,7 +150,7 @@
                 </h2>
 
                 <span class="status">
-                  ACTIVE
+                  ${order.status}
                 </span>
 
               </div>
@@ -170,6 +177,37 @@
 
                 TOTAL:
                 £${order.total.toFixed(2)}
+
+              </div>
+
+              <div class="admin-buttons">
+
+                <button
+                  onclick="updateStatus(
+                    '${docSnap.id}',
+                    'Preparing'
+                  )"
+                >
+                  PREPARING
+                </button>
+
+                <button
+                  onclick="updateStatus(
+                    '${docSnap.id}',
+                    'Ready'
+                  )"
+                >
+                  READY
+                </button>
+
+                <button
+                  onclick="completeOrder(
+                    '${docSnap.id}'
+                  )"
+                >
+                  COMPLETE
+                </button>
+
               </div>
 
             </div>
@@ -181,6 +219,35 @@
           `£${totalRevenue.toFixed(2)}`
       }
     )
+
+    window.updateStatus =
+      async function(id, status) {
+
+      const orderRef =
+        doc(db, "orders", id)
+
+      await updateDoc(
+        orderRef,
+        {
+          status
+        }
+      )
+    }
+
+    window.completeOrder =
+      async function(id) {
+
+      const orderRef =
+        doc(db, "orders", id)
+
+      await updateDoc(
+        orderRef,
+        {
+          completed: true,
+          status: "Completed"
+        }
+      )
+    }
 
   </script>
 

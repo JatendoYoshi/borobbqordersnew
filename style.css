@@ -677,3 +677,38 @@ body {
 
   color: #ffb703;
 }
+
+.admin-buttons {
+
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 20px;
+
+  flex-wrap: wrap;
+}
+
+.admin-buttons button {
+
+  flex: 1;
+
+  border: none;
+
+  background: #d62828;
+
+  color: white;
+
+  padding: 12px;
+
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  font-size: 1rem;
+}
+
+.admin-buttons button:hover {
+
+  opacity: 0.9;
+}

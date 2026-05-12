@@ -258,6 +258,68 @@ document
       return
     }
 
+    try {
+
+      const total =
+        cart.reduce(
+          (sum, item) => sum + item.price,
+          0
+        )
+
+      const orderNumber =
+        Date.now().toString().slice(-4)
+
+      await firebaseAddDoc(
+
+        firebaseCollection(
+          firebaseDB,
+          "orders"
+        ),
+
+        {
+
+          orderNumber:
+            `50${orderNumber}`,
+
+          items: cart,
+
+          total,
+
+          status: "Preparing",
+
+          completed: false,
+
+          created: new Date()
+        }
+      )
+
+      alert(
+        `Order #50${orderNumber} placed successfully!`
+      )
+
+      cart.length = 0
+
+      updateCart()
+
+      closeEverything()
+
+    } catch(error) {
+
+      console.error(error)
+
+      alert(
+        "Firebase connection failed. Check your Firebase config."
+      )
+    }
+})
+  .addEventListener("click", async () => {
+
+    if(cart.length === 0) {
+
+      alert("Your cart is empty.")
+      return
+    }
+
     const orderNumber =
       Math.floor(Math.random() * 9000) + 1000
 
