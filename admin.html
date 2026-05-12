@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Boro Burgers Admin</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap"
+    rel="stylesheet"
+  >
+
+</head>
+
+<body>
+
+  <header class="admin-topbar">
+
+    <div>
+
+      <h1>🍔 BORO BURGERS</h1>
+
+      <p>LIVE ORDER DASHBOARD</p>
+
+    </div>
+
+    <a href="index.html">
+
+      <button class="back-btn">
+        ← RETURN TO KIOSK
+      </button>
+
+    </a>
+
+  </header>
+
+  <section class="stats">
+
+    <div class="stat-card">
+
+      <h2 id="orderCount">0</h2>
+
+      <p>TOTAL ORDERS</p>
+
+    </div>
+
+    <div class="stat-card">
+
+      <h2 id="revenue">£0</h2>
+
+      <p>REVENUE</p>
+
+    </div>
+
+  </section>
+
+  <section
+    class="orders-grid"
+    id="ordersContainer"
+  ></section>
+
+  <script type="module">
+
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+
+    import {
+
+      getFirestore,
+      collection,
+      onSnapshot
+
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
+  authDomain: "borobbqorders.firebaseapp.com",
+  projectId: "borobbqorders",
+  storageBucket: "borobbqorders.firebasestorage.app",
+  messagingSenderId: "608958491192",
+  appId: "1:608958491192:web:a35df22ce7067f582d54cd",
+  measurementId: "G-GHRWMRM0PZ"
+
+    }
+
+    const app =
+      initializeApp(firebaseConfig)
+
+    const db =
+      getFirestore(app)
+
+    const ordersContainer =
+      document.getElementById("ordersContainer")
+
+    const orderCount =
+      document.getElementById("orderCount")
+
+    const revenue =
+      document.getElementById("revenue")
+
+    onSnapshot(
+
+      collection(db, "orders"),
+
+      snapshot => {
+
+        ordersContainer.innerHTML = ""
+
+        let totalRevenue = 0
+
+        orderCount.innerText =
+          snapshot.size
+
+        snapshot.forEach(doc => {
+
+          const order = doc.data()
+
+          totalRevenue += order.total
+
+          ordersContainer.innerHTML += `
+
+            <div class="admin-order-card">
+
+              <div class="order-top">
+
+                <h2>
+                  ORDER #${order.orderNumber}
+                </h2>
+
+                <span class="status">
+                  ACTIVE
+                </span>
+
+              </div>
+
+              <div class="items">
+
+                ${order.items.map(item => `
+
+                  <div class="admin-item">
+
+                    <p>${item.name}</p>
+
+                    <strong>
+                      £${item.price.toFixed(2)}
+                    </strong>
+
+                  </div>
+
+                `).join("")}
+
+              </div>
+
+              <div class="order-total">
+
+                TOTAL:
+                £${order.total.toFixed(2)}
+              </div>
+
+            </div>
+
+          `
+        })
+
+        revenue.innerText =
+          `£${totalRevenue.toFixed(2)}`
+      }
+    )
+
+  </script>
+
+</body>
+</html>
