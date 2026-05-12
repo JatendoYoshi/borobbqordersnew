@@ -247,10 +247,68 @@ window.scrollToMenu = function() {
       behavior: "smooth"
     })
 }
+import {
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 document
   .getElementById("checkoutBtn")
   .addEventListener("click", async () => {
+
+    if(cart.length === 0) {
+      alert("Cart is empty")
+      return
+    }
+
+    try {
+
+      const counterRef =
+        doc(firebaseDB, "meta", "orderCounter")
+
+      const counterSnap =
+        await getDoc(counterRef)
+
+      let current =
+        counterSnap.data().value
+
+      let newOrderNumber =
+        current + 1
+
+      await updateDoc(counterRef, {
+        value: newOrderNumber
+      })
+
+      const total =
+        cart.reduce(
+          (sum, item) => sum + item.price,
+          0
+        )
+
+      await firebaseAddDoc(
+        firebaseCollection(firebaseDB, "orders"),
+        {
+          orderNumber: newOrderNumber,
+          items: cart,
+          total,
+          status: "Preparing",
+          completed: false,
+          created: new Date()
+        }
+      )
+
+      alert(`Order #${newOrderNumber} placed`)
+
+      cart.length = 0
+      updateCart()
+      closeEverything()
+
+    } catch(err) {
+      console.error(err)
+      alert("Order failed")
+    }
+})
 
     if(cart.length === 0) {
 
