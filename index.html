@@ -319,53 +319,44 @@
     const modalBox     = document.getElementById("modalBox");
 
     function openModal(item, isCombo) {
-      modalBox.innerHTML = "";
-
-      modalBox.innerHTML += `
+      // Build entire modal as one HTML string so innerHTML is set once
+      // — this avoids innerHTML += destroying previously created DOM nodes
+      let inner = `
         <h2>${item.name}</h2>
         <p class="modal-subtitle">£${item.price.toFixed(2)} — customise your order below</p>
       `;
 
       if (isCombo) {
-        // Ask add-options for each item in the combo
         item.comboItems.forEach(subName => {
-          modalBox.innerHTML += `<div class="modal-item-label">🍔 ${subName}</div>`;
-          modalBox.innerHTML += `<div class="modal-section-title">ADD TOPPINGS</div>`;
+          const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
+          inner += `<div class="modal-item-label">🍔 ${subName}</div>`;
+          inner += `<div class="modal-section-title">ADD TOPPINGS</div>`;
           ADD_OPTS.forEach((opt, i) => {
-            modalBox.innerHTML += optionHTML(`combo_${subName}_add_${i}`, opt);
+            inner += optionHTML(`combo_${safeName}_add_${i}`, opt);
           });
         });
       } else {
-        // REMOVE options
-        modalBox.innerHTML += `<div class="modal-section-title">REMOVE</div>`;
+        inner += `<div class="modal-section-title">REMOVE</div>`;
         REMOVE_OPTS.forEach((opt, i) => {
-          modalBox.innerHTML += optionHTML(`remove_${i}`, opt);
+          inner += optionHTML(`remove_${i}`, opt);
         });
-
-        // ADD options
-        modalBox.innerHTML += `<div class="modal-section-title">ADD / SAUCE</div>`;
+        inner += `<div class="modal-section-title">ADD / SAUCE</div>`;
         ADD_OPTS.forEach((opt, i) => {
-          modalBox.innerHTML += optionHTML(`add_${i}`, opt);
+          inner += optionHTML(`add_${i}`, opt);
         });
       }
 
-      // Footer buttons — injected as HTML then listeners attached
-      const footer = document.createElement("div");
-      footer.className = "modal-footer";
+      // Placeholder div for footer — buttons added via addEventListener after render
+      inner += `<div class="modal-footer">
+        <button class="btn-cancel" id="modalCancel">CANCEL</button>
+        <button class="btn-confirm" id="modalConfirm">ADD TO ORDER</button>
+      </div>`;
 
-      const cancelBtn = document.createElement("button");
-      cancelBtn.className   = "btn-cancel";
-      cancelBtn.textContent = "CANCEL";
-      cancelBtn.addEventListener("click", closeModal);
+      modalBox.innerHTML = inner;
 
-      const confirmBtn = document.createElement("button");
-      confirmBtn.className   = "btn-confirm";
-      confirmBtn.textContent = "ADD TO ORDER";
-      confirmBtn.addEventListener("click", () => confirmAdd(item, isCombo));
-
-      footer.appendChild(cancelBtn);
-      footer.appendChild(confirmBtn);
-      modalBox.appendChild(footer);
+      // Attach listeners AFTER innerHTML is set
+      document.getElementById("modalCancel").addEventListener("click", closeModal);
+      document.getElementById("modalConfirm").addEventListener("click", () => confirmAdd(item, isCombo));
 
       modalOverlay.classList.remove("hidden");
     }
@@ -387,36 +378,37 @@
 
     function confirmAdd(item, isCombo) {
       let extraCost = 0;
+      // customisations is an array of { itemName, opts: [] } objects
       const customisations = [];
 
       if (isCombo) {
         item.comboItems.forEach(subName => {
+          const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
           const subOpts = [];
           ADD_OPTS.forEach((opt, i) => {
-            const cb = document.getElementById(`combo_${subName}_add_${i}`);
+            const cb = document.getElementById(`combo_${safeName}_add_${i}`);
             if (cb?.checked) {
               extraCost += opt.extra;
               subOpts.push(opt.label);
             }
           });
-          if (subOpts.length) {
-            customisations.push(`${subName}: ${subOpts.join(", ")}`);
-          } else {
-            customisations.push(`${subName}: No extras`);
-          }
+          // Always push an entry per combo item so admin sees each component
+          customisations.push({ itemName: subName, opts: subOpts });
         });
       } else {
+        const opts = [];
         REMOVE_OPTS.forEach((opt, i) => {
           const cb = document.getElementById(`remove_${i}`);
-          if (cb?.checked) customisations.push(opt.label);
+          if (cb?.checked) opts.push(opt.label);
         });
         ADD_OPTS.forEach((opt, i) => {
           const cb = document.getElementById(`add_${i}`);
           if (cb?.checked) {
             extraCost += opt.extra;
-            customisations.push(opt.label);
+            opts.push(opt.label);
           }
         });
+        customisations.push({ itemName: item.name, opts });
       }
 
       const cartItem = {
@@ -446,9 +438,12 @@
         const row = document.createElement("div");
         row.className = "cart-item";
 
-        const customText = item.customisations?.length
-          ? `<div style="font-size:0.75rem;color:#aaa;margin-top:3px;">${item.customisations.join(" · ")}</div>`
-          : "";
+        let customText = "";
+        if (item.customisations?.length) {
+          customText = item.customisations.map(c =>
+            c.opts.length ? `<div style="font-size:0.75rem;color:#aaa;margin-top:2px;">${c.itemName}: ${c.opts.join(", ")}</div>` : ""
+          ).join("");
+        }
 
         row.innerHTML = `
           <div style="flex:1;">

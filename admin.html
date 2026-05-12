@@ -261,18 +261,28 @@
         : "";
 
       const itemsHTML = (order.items || []).map(item => {
-        const customs = item.customisations?.length
-          ? `<ul style="margin:6px 0 8px 20px;padding:0;font-size:1.05rem;color:#bbb;line-height:1.9;">
-              ${item.customisations.map(c => `<li>${c}</li>`).join("")}
-             </ul>`
-          : "";
+        // customisations is array of { itemName, opts[] }
+        let customsHTML = "";
+        if (item.customisations?.length) {
+          item.customisations.forEach(c => {
+            if (!c.opts || !c.opts.length) return;
+            customsHTML += `
+              <div style="font-size:1.05rem;color:#f5c400;margin:6px 0 2px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">
+                ${c.itemName}
+              </div>
+              <ul style="margin:0 0 6px 20px;padding:0;font-size:1.05rem;color:#bbb;line-height:1.9;">
+                ${c.opts.map(o => `<li>${o}</li>`).join("")}
+              </ul>
+            `;
+          });
+        }
         return `
           <div class="admin-item" style="flex-direction:column;align-items:flex-start;">
             <div style="display:flex;justify-content:space-between;width:100%;margin-bottom:2px;">
               <span style="font-size:1.1rem;font-weight:bold;color:#fff;">${item.name}</span>
               <strong style="font-size:1.1rem;">£${(item.price ?? 0).toFixed(2)}</strong>
             </div>
-            ${customs}
+            ${customsHTML}
           </div>
         `;
       }).join("");
