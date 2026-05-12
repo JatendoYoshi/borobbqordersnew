@@ -332,7 +332,7 @@
       docs.sort((a, b) => {
         const tA = a.data().created?.toMillis?.() ?? 0;
         const tB = b.data().created?.toMillis?.() ?? 0;
-        return tA - tB;
+        return tB - tA;
       });
 
       docs.forEach((docSnap) => {
