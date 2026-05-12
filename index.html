@@ -1,64 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
   <title>Boro Burgers</title>
 
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  />
 
-  <script type="module" src="order.js" defer></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap"
+    rel="stylesheet"
+  />
+
 </head>
+
 <body>
 
   <header class="topbar">
+
     <h1>BORO BURGERS</h1>
 
-    <div class="cart-button" id="openCart">
-      🛒
-      <span id="cartCount">0</span>
+    <div class="top-buttons">
+
+      <button id="adminBtn">
+        ADMIN MODE
+      </button>
+
+      <div class="cart-button" id="openCart">
+
+        🛒
+
+        <span id="cartCount">
+          0
+        </span>
+
+      </div>
+
     </div>
+
   </header>
 
   <section class="hero">
+
     <div class="hero-content">
+
       <h2>ORDER FAST.</h2>
+
       <h2>EAT BIG.</h2>
-      <button onclick="scrollToMenu()">START ORDER</button>
+
+      <button onclick="scrollToMenu()">
+        START ORDER
+      </button>
+
     </div>
+
   </section>
 
   <section class="categories">
-    <button class="category active" data-category="All">ALL</button>
-    <button class="category" data-category="Burgers">BURGERS</button>
-    <button class="category" data-category="Chicken">CHICKEN</button>
-    <button class="category" data-category="Sides">SIDES</button>
-    <button class="category" data-category="Drinks">DRINKS</button>
+
+    <button
+      class="category active"
+      data-category="All"
+    >
+      ALL
+    </button>
+
+    <button
+      class="category"
+      data-category="Burgers"
+    >
+      BURGERS
+    </button>
+
+    <button
+      class="category"
+      data-category="Chicken"
+    >
+      CHICKEN
+    </button>
+
+    <button
+      class="category"
+      data-category="Sides"
+    >
+      SIDES
+    </button>
+
+    <button
+      class="category"
+      data-category="Drinks"
+    >
+      DRINKS
+    </button>
+
   </section>
 
-  <section class="menu" id="menu"></section>
+  <section
+    class="menu"
+    id="menu"
+  ></section>
 
-  <aside class="cart hidden" id="cart">
+  <!-- CART -->
+
+  <aside
+    class="cart hidden"
+    id="cart"
+  >
+
     <div class="cart-header">
+
       <h2>YOUR ORDER</h2>
-      <button id="closeCart">✕</button>
+
+      <button id="closeCart">
+        ✕
+      </button>
+
     </div>
 
     <div id="cartItems"></div>
 
     <div class="cart-footer">
-      <h3>TOTAL: £<span id="total">0.00</span></h3>
+
+      <h3>
+        TOTAL:
+        £<span id="total">0.00</span>
+      </h3>
 
       <button id="checkoutBtn">
         PLACE ORDER
       </button>
+
     </div>
+
   </aside>
 
-  <div class="overlay hidden" id="overlay"></div>
+  <!-- ADMIN PANEL -->
+
+  <aside
+    class="admin-panel hidden"
+    id="adminPanel"
+  >
+
+    <div class="admin-header">
+
+      <h2>LIVE ORDERS</h2>
+
+      <button id="closeAdmin">
+        ✕
+      </button>
+
+    </div>
+
+    <div id="ordersContainer"></div>
+
+  </aside>
+
+  <div
+    class="overlay hidden"
+    id="overlay"
+  ></div>
+
+  <!-- FIREBASE -->
+
+  <script type="module">
+
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+
+    import {
+
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot
+
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+
+    const firebaseConfig = {
+
+    apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
+  authDomain: "borobbqorders.firebaseapp.com",
+  projectId: "borobbqorders",
+  storageBucket: "borobbqorders.firebasestorage.app",
+  messagingSenderId: "608958491192",
+  appId: "1:608958491192:web:a35df22ce7067f582d54cd",
+  measurementId: "G-GHRWMRM0PZ"
+    }
+
+    const app =
+      initializeApp(firebaseConfig)
+
+    const db =
+      getFirestore(app)
+
+    window.firebaseDB = db
+
+    window.firebaseCollection = collection
+
+    window.firebaseAddDoc = addDoc
+
+    window.firebaseOnSnapshot = onSnapshot
+
+  </script>
+
+  <script
+    type="module"
+    src="order.js"
+  ></script>
 
 </body>
 </html>

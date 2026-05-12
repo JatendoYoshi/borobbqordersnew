@@ -1,10 +1,12 @@
 const foods = [
+
   {
     id: 1,
     name: "Classic Smash",
     price: 7.99,
     category: "Burgers",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+    image:
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
   },
 
   {
@@ -12,7 +14,8 @@ const foods = [
     name: "Double BBQ",
     price: 10.99,
     category: "Burgers",
-    image: "https://images.unsplash.com/photo-1550547660-d9450f859349"
+    image:
+      "https://images.unsplash.com/photo-1550547660-d9450f859349"
   },
 
   {
@@ -20,7 +23,8 @@ const foods = [
     name: "Loaded Fries",
     price: 4.99,
     category: "Sides",
-    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877"
+    image:
+      "https://images.unsplash.com/photo-1573080496219-bb080dd4f877"
   },
 
   {
@@ -28,7 +32,8 @@ const foods = [
     name: "Chicken Strips",
     price: 6.49,
     category: "Chicken",
-    image: "https://images.unsplash.com/photo-1562967916-eb82221dfb36"
+    image:
+      "https://images.unsplash.com/photo-1562967916-eb82221dfb36"
   },
 
   {
@@ -36,7 +41,8 @@ const foods = [
     name: "Mega Chicken Burger",
     price: 8.99,
     category: "Chicken",
-    image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086"
+    image:
+      "https://images.unsplash.com/photo-1606755962773-d324e0a13086"
   },
 
   {
@@ -44,14 +50,23 @@ const foods = [
     name: "Coca Cola",
     price: 2.49,
     category: "Drinks",
-    image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e"
+    image:
+      "https://images.unsplash.com/photo-1629203851122-3726ecdf080e"
   }
+
 ]
 
-const menu = document.getElementById("menu")
-const cartItems = document.getElementById("cartItems")
-const totalEl = document.getElementById("total")
-const cartCount = document.getElementById("cartCount")
+const menu =
+  document.getElementById("menu")
+
+const cartItems =
+  document.getElementById("cartItems")
+
+const totalEl =
+  document.getElementById("total")
+
+const cartCount =
+  document.getElementById("cartCount")
 
 const cart = []
 
@@ -62,7 +77,7 @@ function renderFoods(items) {
   items.forEach(food => {
 
     menu.innerHTML += `
-    
+
       <div class="card">
 
         <img src="${food.image}" />
@@ -75,7 +90,10 @@ function renderFoods(items) {
             £${food.price.toFixed(2)}
           </div>
 
-          <button class="add-btn" onclick="addToCart(${food.id})">
+          <button
+            class="add-btn"
+            onclick="addToCart(${food.id})"
+          >
             ADD TO ORDER
           </button>
 
@@ -91,7 +109,8 @@ renderFoods(foods)
 
 window.addToCart = function(id) {
 
-  const item = foods.find(food => food.id === id)
+  const item =
+    foods.find(food => food.id === id)
 
   cart.push(item)
 
@@ -120,7 +139,10 @@ function updateCart() {
 
           <p>£${item.price.toFixed(2)}</p>
 
-          <button class="remove-btn" onclick="removeItem(${index})">
+          <button
+            class="remove-btn"
+            onclick="removeItem(${index})"
+          >
             REMOVE
           </button>
 
@@ -131,9 +153,11 @@ function updateCart() {
     `
   })
 
-  totalEl.innerText = total.toFixed(2)
+  totalEl.innerText =
+    total.toFixed(2)
 
-  cartCount.innerText = cart.length
+  cartCount.innerText =
+    cart.length
 }
 
 window.removeItem = function(index) {
@@ -143,53 +167,76 @@ window.removeItem = function(index) {
   updateCart()
 }
 
-const openCart = document.getElementById("openCart")
-const closeCart = document.getElementById("closeCart")
+const openCart =
+  document.getElementById("openCart")
 
-const cartDrawer = document.getElementById("cart")
-const overlay = document.getElementById("overlay")
+const closeCart =
+  document.getElementById("closeCart")
+
+const cartDrawer =
+  document.getElementById("cart")
+
+const overlay =
+  document.getElementById("overlay")
 
 openCart.addEventListener("click", () => {
 
   cartDrawer.classList.remove("hidden")
-  overlay.classList.remove("hidden")
 
+  overlay.classList.remove("hidden")
 })
 
-closeCart.addEventListener("click", closeEverything)
-overlay.addEventListener("click", closeEverything)
+closeCart.addEventListener(
+  "click",
+  closeEverything
+)
+
+overlay.addEventListener(
+  "click",
+  closeEverything
+)
 
 function closeEverything() {
 
   cartDrawer.classList.add("hidden")
+
+  adminPanel.classList.add("hidden")
+
   overlay.classList.add("hidden")
 }
 
-document.querySelectorAll(".category").forEach(button => {
+document
+  .querySelectorAll(".category")
+  .forEach(button => {
 
-  button.addEventListener("click", () => {
+    button.addEventListener("click", () => {
 
-    document
-      .querySelectorAll(".category")
-      .forEach(btn => btn.classList.remove("active"))
+      document
+        .querySelectorAll(".category")
+        .forEach(btn =>
+          btn.classList.remove("active")
+        )
 
-    button.classList.add("active")
+      button.classList.add("active")
 
-    const category = button.dataset.category
+      const category =
+        button.dataset.category
 
-    if(category === "All") {
+      if(category === "All") {
 
-      renderFoods(foods)
+        renderFoods(foods)
 
-    } else {
+      } else {
 
-      const filtered = foods.filter(
-        food => food.category === category
-      )
+        const filtered =
+          foods.filter(
+            food =>
+              food.category === category
+          )
 
-      renderFoods(filtered)
-    }
-  })
+        renderFoods(filtered)
+      }
+    })
 })
 
 window.scrollToMenu = function() {
@@ -203,7 +250,7 @@ window.scrollToMenu = function() {
 
 document
   .getElementById("checkoutBtn")
-  .addEventListener("click", () => {
+  .addEventListener("click", async () => {
 
     if(cart.length === 0) {
 
@@ -214,6 +261,31 @@ document
     const orderNumber =
       Math.floor(Math.random() * 9000) + 1000
 
+    const total =
+      cart.reduce(
+        (sum, item) => sum + item.price,
+        0
+      )
+
+    await firebaseAddDoc(
+
+      firebaseCollection(
+        firebaseDB,
+        "orders"
+      ),
+
+      {
+
+        orderNumber,
+
+        items: cart,
+
+        total,
+
+        created: new Date()
+      }
+    )
+
     alert(
       `Order #${orderNumber} placed successfully!`
     )
@@ -223,4 +295,74 @@ document
     updateCart()
 
     closeEverything()
+})
+
+/* ADMIN */
+
+const adminBtn =
+  document.getElementById("adminBtn")
+
+const adminPanel =
+  document.getElementById("adminPanel")
+
+const closeAdmin =
+  document.getElementById("closeAdmin")
+
+const ordersContainer =
+  document.getElementById("ordersContainer")
+
+adminBtn.addEventListener("click", () => {
+
+  adminPanel.classList.remove("hidden")
+
+  overlay.classList.remove("hidden")
+})
+
+closeAdmin.addEventListener(
+  "click",
+  closeEverything
+)
+
+firebaseOnSnapshot(
+
+  firebaseCollection(
+    firebaseDB,
+    "orders"
+  ),
+
+  snapshot => {
+
+    ordersContainer.innerHTML = ""
+
+    snapshot.forEach(doc => {
+
+      const order = doc.data()
+
+      ordersContainer.innerHTML += `
+
+        <div class="order-box">
+
+          <h3>
+            ORDER #${order.orderNumber}
+          </h3>
+
+          <p>
+            Total:
+            £${order.total.toFixed(2)}
+          </p>
+
+          <br>
+
+          ${order.items.map(item => `
+
+            <p>
+              • ${item.name}
+            </p>
+
+          `).join("")}
+
+        </div>
+
+      `
+    })
 })
