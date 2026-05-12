@@ -50,9 +50,7 @@
 
         🛒
 
-        <span id="cartCount">
-          0
-        </span>
+        <span id="cartCount">0</span>
 
       </div>
 
@@ -78,62 +76,25 @@
 
   <section class="categories">
 
-    <button
-      class="category active"
-      data-category="All"
-    >
-      ALL
-    </button>
-
-    <button
-      class="category"
-      data-category="Burgers"
-    >
-      BURGERS
-    </button>
-
-    <button
-      class="category"
-      data-category="Chicken"
-    >
-      CHICKEN
-    </button>
-
-    <button
-      class="category"
-      data-category="Sides"
-    >
-      SIDES
-    </button>
-
-    <button
-      class="category"
-      data-category="Drinks"
-    >
-      DRINKS
-    </button>
+    <button class="category active" data-category="All">ALL</button>
+    <button class="category" data-category="Burgers">BURGERS</button>
+    <button class="category" data-category="Chicken">CHICKEN</button>
+    <button class="category" data-category="Sides">SIDES</button>
+    <button class="category" data-category="Drinks">DRINKS</button>
 
   </section>
 
-  <section
-    class="menu"
-    id="menu"
-  ></section>
+  <section class="menu" id="menu"></section>
 
   <!-- CART -->
 
-  <aside
-    class="cart hidden"
-    id="cart"
-  >
+  <aside class="cart hidden" id="cart">
 
     <div class="cart-header">
 
       <h2>YOUR ORDER</h2>
 
-      <button id="closeCart">
-        ✕
-      </button>
+      <button id="closeCart">✕</button>
 
     </div>
 
@@ -142,13 +103,10 @@
     <div class="cart-footer">
 
       <h3>
-        TOTAL:
-        £<span id="total">0.00</span>
+        TOTAL: £<span id="total">0.00</span>
       </h3>
 
-      <button id="checkoutBtn">
-        PLACE ORDER
-      </button>
+      <button id="checkoutBtn">PLACE ORDER</button>
 
     </div>
 
@@ -156,18 +114,13 @@
 
   <!-- ADMIN PANEL -->
 
-  <aside
-    class="admin-panel hidden"
-    id="adminPanel"
-  >
+  <aside class="admin-panel hidden" id="adminPanel">
 
     <div class="admin-header">
 
       <h2>LIVE ORDERS</h2>
 
-      <button id="closeAdmin">
-        ✕
-      </button>
+      <button id="closeAdmin">✕</button>
 
     </div>
 
@@ -175,10 +128,7 @@
 
   </aside>
 
-  <div
-    class="overlay hidden"
-    id="overlay"
-  ></div>
+  <div class="overlay hidden" id="overlay"></div>
 
   <!-- FIREBASE -->
 
@@ -186,83 +136,69 @@
 
     import {
       initializeApp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
     import {
-
       getFirestore,
       collection,
       addDoc,
-      onSnapshot
-
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      onSnapshot,
+      doc,
+      getDoc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
 
       apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
-
       authDomain: "borobbqorders.firebaseapp.com",
-
       projectId: "borobbqorders",
-
       storageBucket: "borobbqorders.firebasestorage.app",
-
       messagingSenderId: "608958491192",
+      appId: "1:608958491192:web:a35df22ce7067f582d54cd"
 
-      appId: "1:608958491192:web:a35df22ce7067f582d54cd",
+    };
 
-      measurementId: "G-GHRWMRM0PZ"
-
-    }
-
-    const app =
-      initializeApp(firebaseConfig)
-
-    const db =
-      getFirestore(app)
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     /* =========================
-       SAFE GLOBAL EXPORTS
-       (IMPORTANT FIX)
+       GLOBAL EXPORTS (FIXED)
     ========================== */
 
-    window.firebaseDB = db
-
-    window.firebaseCollection = collection
-
-    window.firebaseAddDoc = addDoc
-
-    window.firebaseOnSnapshot = onSnapshot
+    window.firebaseDB = db;
+    window.firebaseCollection = collection;
+    window.firebaseAddDoc = addDoc;
+    window.firebaseOnSnapshot = onSnapshot;
+    window.firebaseGetDoc = getDoc;
+    window.firebaseUpdateDoc = updateDoc;
+    window.firebaseDoc = doc;
 
     /* =========================
-       UI SAFETY HOOKS
+       SAFE MENU SCROLL
     ========================== */
 
     window.scrollToMenu = function () {
 
-      const menu =
-        document.getElementById("menu")
+      const menu = document.getElementById("menu");
 
-      if(menu) {
-        menu.scrollIntoView({
-          behavior: "smooth"
-        })
+      if (menu) {
+        menu.scrollIntoView({ behavior: "smooth" });
       }
-    }
 
-    /* Prevent crash if order.js loads early */
+    };
+
+    /* =========================
+       READY CHECK
+    ========================== */
+
     window.addEventListener("DOMContentLoaded", () => {
-
-      console.log("Boro Burgers loaded")
-
-    })
+      console.log("Boro Burgers loaded correctly");
+    });
 
   </script>
 
-  <script
-    type="module"
-    src="order.js"
-  ></script>
+  <script type="module" src="order.js"></script>
 
 </body>
 
