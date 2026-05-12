@@ -277,20 +277,29 @@
 
     /* =========================
        RENDER MENU
+       FIX: use createElement + appendChild for section titles
+            instead of innerHTML += which destroys event listeners
     ========================= */
+
+    function makeSectionTitle(text) {
+      const div = document.createElement("div");
+      div.className = "menu-section-title";
+      div.innerHTML = `<span>${text}</span>`;
+      return div;
+    }
 
     function renderMenu() {
       menuRoot.innerHTML = "";
 
       // MAINS
-      menuRoot.innerHTML += `<div class="menu-section-title"><span>MAINS</span></div>`;
+      menuRoot.appendChild(makeSectionTitle("MAINS"));
       const mainsGrid = document.createElement("section");
       mainsGrid.className = "menu";
       MAINS.forEach(item => mainsGrid.appendChild(buildCard(item, false)));
       menuRoot.appendChild(mainsGrid);
 
       // COMBOS
-      menuRoot.innerHTML += `<div class="menu-section-title"><span>COMBOS</span></div>`;
+      menuRoot.appendChild(makeSectionTitle("COMBOS"));
       const combosGrid = document.createElement("section");
       combosGrid.className = "menu";
       COMBOS.forEach(item => combosGrid.appendChild(buildCard(item, true)));
@@ -306,7 +315,7 @@
         <div class="card-content" style="display:flex;flex-direction:column;flex:1;">
           <h3>${item.name}</h3>
           <p class="card-desc" style="font-size:0.8rem;color:#aaa;margin:4px 0 8px;flex:1;">${item.desc}</p>
-          <p>£${item.price.toFixed(2)}</p>
+          <p class="price">£${item.price.toFixed(2)}</p>
           <button class="add-btn">ADD TO ORDER</button>
         </div>
       `;
@@ -322,8 +331,6 @@
     const modalBox     = document.getElementById("modalBox");
 
     function openModal(item, isCombo) {
-      // Build entire modal as one HTML string so innerHTML is set once
-      // — this avoids innerHTML += destroying previously created DOM nodes
       let inner = `
         <h2>${item.name}</h2>
         <p class="modal-subtitle">£${item.price.toFixed(2)} — customise your order below</p>
@@ -349,7 +356,6 @@
         });
       }
 
-      // Placeholder div for footer — buttons added via addEventListener after render
       inner += `<div class="modal-footer">
         <button class="btn-cancel" id="modalCancel">CANCEL</button>
         <button class="btn-confirm" id="modalConfirm">ADD TO ORDER</button>
@@ -357,16 +363,14 @@
 
       modalBox.innerHTML = inner;
 
-      // Store pending item globally so confirmAdd always has access
-      window._pendingModalItem   = item;
-      window._pendingModalCombo  = isCombo;
+      window._pendingModalItem  = item;
+      window._pendingModalCombo = isCombo;
 
       document.getElementById("modalCancel").addEventListener("click", closeModal);
       document.getElementById("modalConfirm").addEventListener("click", () => {
         confirmAdd(window._pendingModalItem, window._pendingModalCombo);
       });
 
-      // Hide cart overlay so it can't sit on top of modal
       document.getElementById("overlay").classList.add("hidden");
       document.getElementById("cart").classList.add("hidden");
       modalOverlay.classList.remove("hidden");
@@ -403,7 +407,6 @@
               subOpts.push(opt.label);
             }
           });
-          // Always push an entry per combo item so admin sees each component
           customisations.push({ itemName: subName, opts: subOpts });
         });
       } else {
