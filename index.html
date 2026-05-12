@@ -297,11 +297,12 @@
     function buildCard(item, isCombo) {
       const card = document.createElement("div");
       card.className = "card";
+      card.style.cssText = "display:flex;flex-direction:column;";
       card.innerHTML = `
         <img src="${item.image}" alt="${item.name}" />
-        <div class="card-content">
+        <div class="card-content" style="display:flex;flex-direction:column;flex:1;">
           <h3>${item.name}</h3>
-          <p class="card-desc" style="font-size:0.8rem;color:#aaa;margin:4px 0 8px;">${item.desc}</p>
+          <p class="card-desc" style="font-size:0.8rem;color:#aaa;margin:4px 0 8px;flex:1;">${item.desc}</p>
           <p>£${item.price.toFixed(2)}</p>
           <button class="add-btn">ADD TO ORDER</button>
         </div>
