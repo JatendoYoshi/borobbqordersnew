@@ -15,10 +15,13 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.8);
-      z-index: 300;
+      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    .modal-overlay * {
+      pointer-events: auto;
     }
     .modal-overlay.hidden { display: none; }
 
@@ -354,10 +357,18 @@
 
       modalBox.innerHTML = inner;
 
-      // Attach listeners AFTER innerHTML is set
-      document.getElementById("modalCancel").addEventListener("click", closeModal);
-      document.getElementById("modalConfirm").addEventListener("click", () => confirmAdd(item, isCombo));
+      // Store pending item globally so confirmAdd always has access
+      window._pendingModalItem   = item;
+      window._pendingModalCombo  = isCombo;
 
+      document.getElementById("modalCancel").addEventListener("click", closeModal);
+      document.getElementById("modalConfirm").addEventListener("click", () => {
+        confirmAdd(window._pendingModalItem, window._pendingModalCombo);
+      });
+
+      // Hide cart overlay so it can't sit on top of modal
+      document.getElementById("overlay").classList.add("hidden");
+      document.getElementById("cart").classList.add("hidden");
       modalOverlay.classList.remove("hidden");
     }
 
@@ -377,8 +388,8 @@
     }
 
     function confirmAdd(item, isCombo) {
+      if (!item) { console.error("confirmAdd: no item"); return; }
       let extraCost = 0;
-      // customisations is an array of { itemName, opts: [] } objects
       const customisations = [];
 
       if (isCombo) {
