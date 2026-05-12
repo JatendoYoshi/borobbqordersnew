@@ -1,11 +1,9 @@
 /* =========================================================
-   BORO BURGERS - FULL SAFE ORDER SYSTEM (FIXED)
+   BORO BURGERS - SIMPLE SAFE ORDER SYSTEM (NO COUNTER)
    ========================================================= */
 
 import {
   doc,
-  getDoc,
-  updateDoc,
   collection,
   addDoc,
   onSnapshot
@@ -61,13 +59,13 @@ const foods = [
 ];
 
 /* =========================
-   STATE
+   CART STATE
 ========================= */
 
 const cart = [];
 
 /* =========================
-   DOM SAFE ACCESS
+   DOM
 ========================= */
 
 const menu = document.getElementById("menu");
@@ -76,13 +74,13 @@ const totalEl = document.getElementById("total");
 const cartCount = document.getElementById("cartCount");
 
 /* =========================
-   INIT (CRASH PROOF)
+   INIT SAFE LOAD
 ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
 
   if (!menu) {
-    console.error("❌ Menu element missing (#menu)");
+    console.error("Menu missing");
     return;
   }
 
@@ -92,7 +90,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================
-   RENDER MENU
+   MENU RENDER
 ========================= */
 
 function renderFoods(items) {
@@ -122,6 +120,7 @@ function renderFoods(items) {
 
       </div>
     `;
+
   });
 
 }
@@ -184,18 +183,18 @@ window.removeItem = function(index) {
 };
 
 /* =========================
-   UI BINDING
+   UI CONTROLS
 ========================= */
 
 function bindUI() {
 
   const openCart = document.getElementById("openCart");
   const closeCart = document.getElementById("closeCart");
-  const cart = document.getElementById("cart");
+  const cartPanel = document.getElementById("cart");
   const overlay = document.getElementById("overlay");
 
   openCart?.addEventListener("click", () => {
-    cart?.classList.remove("hidden");
+    cartPanel?.classList.remove("hidden");
     overlay?.classList.remove("hidden");
   });
 
@@ -203,7 +202,7 @@ function bindUI() {
   overlay?.addEventListener("click", closeAll);
 
   function closeAll() {
-    cart?.classList.add("hidden");
+    cartPanel?.classList.add("hidden");
     document.getElementById("adminPanel")?.classList.add("hidden");
     overlay?.classList.add("hidden");
   }
@@ -240,7 +239,7 @@ window.scrollToMenu = function() {
 };
 
 /* =========================
-   CHECKOUT (FIXED 100%)
+   CHECKOUT (RANDOM ORDER ID)
 ========================= */
 
 document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
@@ -252,28 +251,14 @@ document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
   try {
 
-    /* SAFE COUNTER HANDLING */
-    const counterRef = doc(firebaseDB, "meta", "orderCounter");
-    const counterSnap = await getDoc(counterRef);
-
-    let current = 5000;
-
-    if (counterSnap.exists()) {
-      current = counterSnap.data().value;
-    }
-
-    const newOrderNumber = current + 1;
-
-    await updateDoc(counterRef, {
-      value: newOrderNumber
-    });
+    const orderNumber = Math.floor(100000 + Math.random() * 900000);
 
     const total = cart.reduce((sum, i) => sum + i.price, 0);
 
     await firebaseAddDoc(
       firebaseCollection(firebaseDB, "orders"),
       {
-        orderNumber: newOrderNumber,
+        orderNumber,
         items: cart,
         total,
         status: "Preparing",
@@ -282,7 +267,7 @@ document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
       }
     );
 
-    alert(`Order #${newOrderNumber} placed successfully`);
+    alert(`Order #${orderNumber} placed successfully`);
 
     cart.length = 0;
     updateCart();
@@ -292,8 +277,8 @@ document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
   } catch (err) {
 
-    console.error("Firebase checkout error:", err);
-    alert("Firebase error — check console (F12)");
+    console.error("Checkout error:", err);
+    alert(err.message);
 
   }
 
