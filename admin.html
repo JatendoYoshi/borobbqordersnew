@@ -260,12 +260,20 @@
         ? order.created.toDate().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
         : "";
 
-      const itemsHTML = (order.items || []).map(item => `
-        <div class="admin-item">
-          <span>${item.name}</span>
-          <strong>£${(item.price ?? 0).toFixed(2)}</strong>
-        </div>
-      `).join("");
+      const itemsHTML = (order.items || []).map(item => {
+        const customs = item.customisations?.length
+          ? `<div style="font-size:0.8rem;color:#aaa;margin:2px 0 4px 0;">${item.customisations.join(" · ")}</div>`
+          : "";
+        return `
+          <div class="admin-item" style="flex-direction:column;align-items:flex-start;">
+            <div style="display:flex;justify-content:space-between;width:100%;">
+              <span>${item.name}</span>
+              <strong>£${(item.price ?? 0).toFixed(2)}</strong>
+            </div>
+            ${customs}
+          </div>
+        `;
+      }).join("");
 
       card.innerHTML = `
         <div class="order-top">
