@@ -1,16 +1,33 @@
-/* =========================================================
-   BORO BURGERS - SIMPLE SAFE ORDER SYSTEM (NO COUNTER)
-   ========================================================= */
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-  doc,
+  getFirestore,
   collection,
   addDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* =========================
-   FOOD DATA
+   FIREBASE CONFIG
+========================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
+  authDomain: "borobbqorders.firebaseapp.com",
+  projectId: "borobbqorders",
+  storageBucket: "borobbqorders.firebasestorage.app",
+  messagingSenderId: "608958491192",
+  appId: "1:608958491192:web:a35df22ce7067f582d54cd",
+  measurementId: "G-GHRWMRM0PZ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* =========================
+   MENU DATA
 ========================= */
 
 const foods = [
@@ -59,7 +76,7 @@ const foods = [
 ];
 
 /* =========================
-   CART STATE
+   STATE
 ========================= */
 
 const cart = [];
@@ -74,50 +91,32 @@ const totalEl = document.getElementById("total");
 const cartCount = document.getElementById("cartCount");
 
 /* =========================
-   INIT SAFE LOAD
+   INIT
 ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
-
-  if (!menu) {
-    console.error("Menu missing");
-    return;
-  }
-
-  renderFoods(foods);
+  renderMenu(foods);
   bindUI();
-
 });
 
 /* =========================
    MENU RENDER
 ========================= */
 
-function renderFoods(items) {
-
-  if (!menu) return;
+function renderMenu(items) {
 
   menu.innerHTML = "";
 
-  items.forEach(food => {
+  items.forEach(item => {
 
     menu.innerHTML += `
       <div class="card">
-
-        <img src="${food.image}" />
-
+        <img src="${item.image}" />
         <div class="card-content">
-
-          <h3>${food.name}</h3>
-
-          <div class="price">£${food.price.toFixed(2)}</div>
-
-          <button onclick="addToCart(${food.id})">
-            ADD TO ORDER
-          </button>
-
+          <h3>${item.name}</h3>
+          <p>£${item.price.toFixed(2)}</p>
+          <button onclick="addToCart(${item.id})">ADD</button>
         </div>
-
       </div>
     `;
 
@@ -141,32 +140,18 @@ window.addToCart = function(id) {
 
 function updateCart() {
 
-  if (!cartItems || !totalEl || !cartCount) return;
-
   cartItems.innerHTML = "";
 
   let total = 0;
 
-  cart.forEach((item, index) => {
+  cart.forEach((item, i) => {
 
     total += item.price;
 
     cartItems.innerHTML += `
       <div class="cart-item">
-
-        <img src="${item.image}" />
-
-        <div>
-
-          <h4>${item.name}</h4>
-          <p>£${item.price.toFixed(2)}</p>
-
-          <button onclick="removeItem(${index})">
-            REMOVE
-          </button>
-
-        </div>
-
+        <p>${item.name} - £${item.price.toFixed(2)}</p>
+        <button onclick="removeItem(${i})">X</button>
       </div>
     `;
 
@@ -177,51 +162,50 @@ function updateCart() {
 
 }
 
-window.removeItem = function(index) {
-  cart.splice(index, 1);
+window.removeItem = function(i) {
+  cart.splice(i, 1);
   updateCart();
 };
 
 /* =========================
-   UI CONTROLS
+   UI
 ========================= */
 
 function bindUI() {
 
   const openCart = document.getElementById("openCart");
   const closeCart = document.getElementById("closeCart");
-  const cartPanel = document.getElementById("cart");
+  const cart = document.getElementById("cart");
   const overlay = document.getElementById("overlay");
 
   openCart?.addEventListener("click", () => {
-    cartPanel?.classList.remove("hidden");
-    overlay?.classList.remove("hidden");
+    cart.classList.remove("hidden");
+    overlay.classList.remove("hidden");
   });
 
   closeCart?.addEventListener("click", closeAll);
   overlay?.addEventListener("click", closeAll);
 
   function closeAll() {
-    cartPanel?.classList.add("hidden");
-    document.getElementById("adminPanel")?.classList.add("hidden");
-    overlay?.classList.add("hidden");
+    cart.classList.add("hidden");
+    overlay.classList.add("hidden");
   }
 
   document.querySelectorAll(".category").forEach(btn => {
 
     btn.addEventListener("click", () => {
 
+      const cat = btn.dataset.category;
+
       document.querySelectorAll(".category")
         .forEach(b => b.classList.remove("active"));
 
       btn.classList.add("active");
 
-      const cat = btn.dataset.category;
-
       if (cat === "All") {
-        renderFoods(foods);
+        renderMenu(foods);
       } else {
-        renderFoods(foods.filter(f => f.category === cat));
+        renderMenu(foods.filter(f => f.category === cat));
       }
 
     });
@@ -231,43 +215,32 @@ function bindUI() {
 }
 
 /* =========================
-   SCROLL
-========================= */
-
-window.scrollToMenu = function() {
-  document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
-};
-
-/* =========================
-   CHECKOUT (RANDOM ORDER ID)
+   CHECKOUT (FIXED)
 ========================= */
 
 document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
-  if (cart.length === 0) {
+  if (!cart.length) {
     alert("Cart is empty");
     return;
   }
 
   try {
 
-    const orderNumber = Math.floor(100000 + Math.random() * 900000);
-
     const total = cart.reduce((sum, i) => sum + i.price, 0);
 
-    await firebaseAddDoc(
-      firebaseCollection(firebaseDB, "orders"),
-      {
-        orderNumber,
-        items: cart,
-        total,
-        status: "Preparing",
-        completed: false,
-        created: new Date()
-      }
-    );
+    const orderData = {
+      orderNumber: Math.floor(100000 + Math.random() * 900000),
+      items: cart,
+      total,
+      status: "Preparing",
+      completed: false,
+      created: new Date()
+    };
 
-    alert(`Order #${orderNumber} placed successfully`);
+    await addDoc(collection(db, "orders"), orderData);
+
+    alert("Order placed successfully!");
 
     cart.length = 0;
     updateCart();
@@ -277,9 +250,39 @@ document.getElementById("checkoutBtn")?.addEventListener("click", async () => {
 
   } catch (err) {
 
-    console.error("Checkout error:", err);
+    console.error("FIREBASE ERROR:", err);
     alert(err.message);
 
   }
 
 });
+
+/* =========================
+   ADMIN LIVE ORDERS
+========================= */
+
+const ordersContainer = document.getElementById("ordersContainer");
+
+if (ordersContainer) {
+
+  onSnapshot(collection(db, "orders"), snapshot => {
+
+    ordersContainer.innerHTML = "";
+
+    snapshot.forEach(doc => {
+
+      const o = doc.data();
+
+      ordersContainer.innerHTML += `
+        <div class="order-box">
+          <h3>ORDER #${o.orderNumber}</h3>
+          <p>Status: ${o.status}</p>
+          <p>Total: £${o.total.toFixed(2)}</p>
+        </div>
+      `;
+
+    });
+
+  });
+
+}
