@@ -122,11 +122,127 @@
       padding: 24px 20px 8px;
       color: #fff;
     }
-
     .menu-section-title span {
       display: inline-block;
       border-bottom: 3px solid #f5c400;
       padding-bottom: 4px;
+    }
+
+    /* ── DISCOUNT PRESETS ── */
+    .discount-presets {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .preset-btn {
+      flex: 1;
+      padding: 16px;
+      border: 2px solid #333;
+      background: #222;
+      color: #ffb703;
+      border-radius: 10px;
+      font-size: 1.4rem;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .preset-btn:hover {
+      background: #2a2a2a;
+      border-color: #ffb703;
+    }
+    .preset-btn.selected {
+      background: #ffb703;
+      color: #111;
+      border-color: #ffb703;
+    }
+
+    /* ── CUSTOM DISCOUNT INPUT ── */
+    .discount-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .discount-input-row input {
+      flex: 1;
+      padding: 14px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: white;
+      font-size: 1.3rem;
+      font-family: 'Bebas Neue', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .discount-input-row input:focus {
+      border-color: #ffb703;
+    }
+    .discount-input-row input::placeholder {
+      color: #555;
+    }
+    .discount-input-row span {
+      font-size: 1.8rem;
+      color: #aaa;
+      font-family: 'Bebas Neue', sans-serif;
+    }
+
+    /* ── DISCOUNT BAR IN CART ── */
+    .discount-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a1a1a;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #ffb703;
+      margin-bottom: 12px;
+    }
+    .discount-bar-label {
+      color: #ffb703;
+      font-size: 1.1rem;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+    }
+    .discount-bar-remove {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .discount-bar-remove:hover { color: #fff; }
+
+    /* ── APPLY DISCOUNT BUTTON ── */
+    #discountBtn {
+      width: 100%;
+      margin-top: 12px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #ffb703;
+      padding: 14px;
+      border-radius: 15px;
+      font-size: 1.3rem;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    #discountBtn:hover {
+      border-color: #ffb703;
+      background: #222;
+    }
+
+    /* ── SUBTOTAL ROW ── */
+    .cart-subtotal {
+      font-size: 1.3rem;
+      color: #888;
+      margin-bottom: 4px;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
     }
   </style>
 </head>
@@ -164,12 +280,15 @@
     </div>
     <div id="cartItems"></div>
     <div class="cart-footer">
+      <div id="discountBar"></div>
+      <div id="subtotalRow" class="cart-subtotal hidden"></div>
       <h3>TOTAL: £<span id="total">0.00</span></h3>
+      <button id="discountBtn">🏷 APPLY DISCOUNT</button>
       <button id="checkoutBtn">PLACE ORDER</button>
     </div>
   </aside>
 
-  <!-- CUSTOMISE MODAL -->
+  <!-- CUSTOMISE / DISCOUNT MODAL -->
   <div class="modal-overlay hidden" id="modalOverlay">
     <div class="modal" id="modalBox"></div>
   </div>
@@ -226,7 +345,7 @@
         id: 4,
         name: "The Classic Mix",
         desc: "BigMak and a Grilled Hotdog — add your toppings to each!",
-        price: 6.00,
+        price: 5.50,
         image: "https://images.unsplash.com/photo-1561758033-7e924f619b47",
         comboItems: ["BigMak", "Grilled Hotdog"]
       },
@@ -234,7 +353,7 @@
         id: 5,
         name: "The Ultimate Mix",
         desc: "Loaded BigMak and a Grilled Hotdog — add your toppings to each!",
-        price: 6.50,
+        price: 5.50,
         image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086",
         comboItems: ["Loaded BigMak", "Grilled Hotdog"]
       }
@@ -245,10 +364,10 @@
     ========================= */
 
     const REMOVE_OPTS = [
-      { label: "No Tomatoes",          extra: 0 },
-      { label: "No Lettuce",           extra: 0 },
-      { label: "No Caramelised Onions",extra: 0 },
-      { label: "No Sauce",             extra: 0 }
+      { label: "No Tomatoes",           extra: 0 },
+      { label: "No Lettuce",            extra: 0 },
+      { label: "No Caramelised Onions", extra: 0 },
+      { label: "No Sauce",              extra: 0 }
     ];
 
     const ADD_OPTS = [
@@ -265,6 +384,7 @@
     ========================= */
 
     const cart = [];
+    let discount = 0; // decimal, e.g. 0.1 = 10%
 
     /* =========================
        DOM REFS
@@ -277,8 +397,6 @@
 
     /* =========================
        RENDER MENU
-       FIX: use createElement + appendChild for section titles
-            instead of innerHTML += which destroys event listeners
     ========================= */
 
     function makeSectionTitle(text) {
@@ -291,14 +409,12 @@
     function renderMenu() {
       menuRoot.innerHTML = "";
 
-      // MAINS
       menuRoot.appendChild(makeSectionTitle("MAINS"));
       const mainsGrid = document.createElement("section");
       mainsGrid.className = "menu";
       MAINS.forEach(item => mainsGrid.appendChild(buildCard(item, false)));
       menuRoot.appendChild(mainsGrid);
 
-      // COMBOS
       menuRoot.appendChild(makeSectionTitle("COMBOS"));
       const combosGrid = document.createElement("section");
       combosGrid.className = "menu";
@@ -324,7 +440,7 @@
     }
 
     /* =========================
-       MODAL
+       ITEM CUSTOMISE MODAL
     ========================= */
 
     const modalOverlay = document.getElementById("modalOverlay");
@@ -425,17 +541,126 @@
         customisations.push({ itemName: item.name, opts });
       }
 
-      const cartItem = {
+      cart.push({
         id:             item.id,
         name:           item.name,
         price:          item.price + extraCost,
         basePrice:      item.price,
         customisations: customisations
-      };
+      });
 
-      cart.push(cartItem);
       updateCart();
       closeModal();
+    }
+
+    /* =========================
+       DISCOUNT MODAL
+    ========================= */
+
+    function openDiscountModal() {
+      // Track which preset is currently hovered/selected for live preview
+      let pendingDiscount = discount;
+
+      function buildDiscountModal() {
+        const pct = Math.round(pendingDiscount * 100);
+        modalBox.innerHTML = `
+          <h2>APPLY DISCOUNT</h2>
+          <p class="modal-subtitle">Choose a preset or enter a custom percentage below</p>
+
+          <div class="modal-section-title">PRESETS</div>
+          <div class="discount-presets">
+            <button class="preset-btn${pct === 10 ? " selected" : ""}" data-val="10">10%</button>
+            <button class="preset-btn${pct === 20 ? " selected" : ""}" data-val="20">20%</button>
+            <button class="preset-btn${pct === 25 ? " selected" : ""}" data-val="25">25%</button>
+            <button class="preset-btn${pct === 50 ? " selected" : ""}" data-val="50">50%</button>
+          </div>
+
+          <div class="modal-section-title">CUSTOM DISCOUNT</div>
+          <div class="discount-input-row">
+            <input
+              id="customDiscountInput"
+              type="number"
+              min="1"
+              max="99"
+              placeholder="Enter %"
+              value="${pct > 0 && ![10,20,25,50].includes(pct) ? pct : ""}"
+            />
+            <span>%</span>
+          </div>
+
+          ${pendingDiscount > 0 ? `
+            <div style="margin-top:16px;padding:12px 14px;background:#111;border-radius:10px;
+              border:1px solid #2a2a2a;font-size:1rem;color:#aaa;text-align:center;">
+              Preview: <strong style="color:#ffb703;">${Math.round(pendingDiscount * 100)}% off</strong>
+              — saving
+              <strong style="color:#ffb703;">
+                £${(cart.reduce((s, i) => s + i.price, 0) * pendingDiscount).toFixed(2)}
+              </strong>
+            </div>
+          ` : ""}
+
+          <div class="modal-footer">
+            <button class="btn-cancel" id="modalCancel">CANCEL</button>
+            ${discount > 0 ? `<button class="btn-cancel" id="removeDiscountBtn"
+              style="background:#c0392b;color:#fff;">REMOVE</button>` : ""}
+            <button class="btn-confirm" id="modalConfirm">APPLY</button>
+          </div>
+        `;
+
+        // Preset buttons
+        modalBox.querySelectorAll(".preset-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const val = Number(btn.dataset.val) / 100;
+            // Toggle off if already selected
+            pendingDiscount = pendingDiscount === val ? 0 : val;
+            document.getElementById("customDiscountInput").value = "";
+            buildDiscountModal(); // re-render preview
+          });
+        });
+
+        // Custom input live preview
+        document.getElementById("customDiscountInput").addEventListener("input", (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val) && val > 0 && val < 100) {
+            pendingDiscount = val / 100;
+            // Deselect presets visually
+            modalBox.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("selected"));
+          } else {
+            pendingDiscount = 0;
+          }
+        });
+
+        // Cancel
+        document.getElementById("modalCancel").addEventListener("click", closeModal);
+
+        // Remove existing discount
+        document.getElementById("removeDiscountBtn")?.addEventListener("click", () => {
+          discount = 0;
+          updateCart();
+          closeModal();
+        });
+
+        // Apply
+        document.getElementById("modalConfirm").addEventListener("click", () => {
+          // If custom input has a value, use that
+          const customVal = parseFloat(document.getElementById("customDiscountInput").value);
+          if (!isNaN(customVal) && customVal > 0 && customVal < 100) {
+            discount = customVal / 100;
+          } else if (pendingDiscount > 0) {
+            discount = pendingDiscount;
+          } else {
+            discount = 0;
+          }
+          updateCart();
+          closeModal();
+        });
+      }
+
+      buildDiscountModal();
+
+      document.getElementById("overlay").classList.add("hidden");
+      document.getElementById("cart").classList.add("hidden");
+      modalOverlay.classList.remove("hidden");
     }
 
     /* =========================
@@ -444,10 +669,10 @@
 
     function updateCart() {
       cartItemsEl.innerHTML = "";
-      let total = 0;
+      let subtotal = 0;
 
       cart.forEach((item, i) => {
-        total += item.price;
+        subtotal += item.price;
 
         const row = document.createElement("div");
         row.className = "cart-item";
@@ -455,7 +680,9 @@
         let customText = "";
         if (item.customisations?.length) {
           customText = item.customisations.map(c =>
-            c.opts.length ? `<div style="font-size:0.75rem;color:#aaa;margin-top:2px;">${c.itemName}: ${c.opts.join(", ")}</div>` : ""
+            c.opts.length
+              ? `<div style="font-size:0.75rem;color:#aaa;margin-top:2px;">${c.itemName}: ${c.opts.join(", ")}</div>`
+              : ""
           ).join("");
         }
 
@@ -477,6 +704,33 @@
         });
       });
 
+      // Discount bar
+      const discountBar   = document.getElementById("discountBar");
+      const subtotalRow   = document.getElementById("subtotalRow");
+
+      if (discount > 0 && subtotal > 0) {
+        const saving = subtotal * discount;
+        const pct    = Math.round(discount * 100);
+
+        discountBar.innerHTML = `
+          <div class="discount-bar">
+            <span class="discount-bar-label">🏷 ${pct}% OFF — SAVING £${saving.toFixed(2)}</span>
+            <button class="discount-bar-remove" id="removeDiscount" title="Remove discount">✕</button>
+          </div>
+        `;
+        document.getElementById("removeDiscount").addEventListener("click", () => {
+          discount = 0;
+          updateCart();
+        });
+
+        subtotalRow.textContent = `SUBTOTAL: £${subtotal.toFixed(2)}`;
+        subtotalRow.classList.remove("hidden");
+      } else {
+        discountBar.innerHTML = "";
+        subtotalRow.classList.add("hidden");
+      }
+
+      const total = subtotal * (1 - discount);
       totalEl.innerText     = total.toFixed(2);
       cartCountEl.innerText = cart.length;
     }
@@ -494,25 +748,32 @@
       btn.textContent = "PLACING ORDER...";
 
       try {
+        const subtotal     = cart.reduce((sum, item) => sum + item.price, 0);
+        const discountAmt  = subtotal * discount;
+        const total        = subtotal - discountAmt;
 
         const orderData = {
-          orderNumber:    Math.floor(1000 + Math.random() * 9000),
-          items:          cart.map(item => ({
+          orderNumber:   Math.floor(1000 + Math.random() * 9000),
+          items:         cart.map(item => ({
             id:             item.id,
             name:           item.name,
             price:          item.price,
             customisations: item.customisations || []
           })),
-          total:     cart.reduce((sum, item) => sum + item.price, 0),
-          status:    "Preparing",
-          completed: false,
-          created:   new Date()
+          subtotal:      subtotal,
+          discountPct:   Math.round(discount * 100),
+          discountAmt:   discountAmt,
+          total:         total,
+          status:        "Preparing",
+          completed:     false,
+          created:       new Date()
         };
 
         await addDoc(collection(db, "orders"), orderData);
 
         alert(`Order #${orderData.orderNumber} placed successfully!`);
         cart.length = 0;
+        discount    = 0;
         updateCart();
         document.getElementById("cart").classList.add("hidden");
         document.getElementById("overlay").classList.add("hidden");
@@ -532,7 +793,6 @@
     ========================= */
 
     function setupUI() {
-
       const openCartBtn  = document.getElementById("openCart");
       const closeCartBtn = document.getElementById("closeCart");
       const cartPanel    = document.getElementById("cart");
@@ -551,6 +811,7 @@
       closeCartBtn?.addEventListener("click", closeAll);
       overlay?.addEventListener("click", closeAll);
 
+      document.getElementById("discountBtn").addEventListener("click", openDiscountModal);
     }
 
     window.scrollToMenu = function () {
