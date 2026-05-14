@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boro BBQ — Order Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet" />
+
+  <style>
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --red:    #d62828;
+      --yellow: #ffb703;
+      --green:  #00c853;
+      --bg:     #0d0d0d;
+      --card:   #141414;
+      --border: #1f1f1f;
+    }
+
+    body {
+      background: var(--bg);
+      color: white;
+      font-family: 'Bebas Neue', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--red);
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar h1 {
+      font-family: 'Anton', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 3px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,0.25);
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00e676;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1;   transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .back-btn {
+      border: none;
+      background: white;
+      color: black;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .back-btn:hover { opacity: 0.85; }
+
+    /* ── BOARD LAYOUT ── */
+    .board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: calc(100vh - 130px);
+    }
+
+    .board-col {
+      padding: 30px 28px;
+      border-right: 1px solid var(--border);
+    }
+    .board-col:last-child { border-right: none; }
+
+    /* ── COLUMN HEADERS ── */
+    .col-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 3px solid var(--border);
+    }
+
+    .col-header h2 {
+      font-family: 'Anton', sans-serif;
+      font-size: 3rem;
+      letter-spacing: 4px;
+    }
+
+    .col-header.preparing h2 { color: #fff; }
+    .col-header.ready     h2 { color: #fff; }
+
+    .col-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .col-count {
+      margin-left: auto;
+      font-family: 'Anton', sans-serif;
+      font-size: 1.8rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0;
+    }
+
+    .col-header.preparing .col-count {
+      background: var(--yellow);
+      color: #111;
+    }
+    .col-header.ready .col-count {
+      background: var(--green);
+      color: #fff;
+    }
+
+    /* ── ORDER CARDS ── */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .order-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 24px 16px;
+      text-align: center;
+      border: 2px solid var(--border);
+      animation: cardIn 0.35s ease both;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .order-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .order-card.preparing {
+      border-color: rgba(255, 183, 3, 0.3);
+      background: linear-gradient(135deg, #161400 0%, var(--card) 60%);
+    }
+
+    .order-card.ready {
+      border-color: rgba(0, 200, 83, 0.5);
+      background: linear-gradient(135deg, #001a0a 0%, var(--card) 60%);
+      box-shadow: 0 0 20px rgba(0, 200, 83, 0.08);
+    }
+
+    .order-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+      opacity: 0.45;
+      margin-bottom: 6px;
+    }
+
+    .order-number {
+      font-family: 'Anton', sans-serif;
+      font-size: 3.2rem;
+      line-height: 1;
+      letter-spacing: 2px;
+    }
+
+    .order-card.preparing .order-number { color: #fff; }
+    .order-card.ready     .order-number { color: #fff; }
+
+    .order-time {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+
+    /* Ready glow pulse */
+    .order-card.ready {
+      animation: cardIn 0.35s ease both, readyGlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes readyGlow {
+      0%,100% { box-shadow: 0 0 12px rgba(0,200,83,0.08); }
+      50%      { box-shadow: 0 0 28px rgba(0,200,83,0.22); }
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      opacity: 0.25;
+      gap: 12px;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 3.5rem;
+    }
+
+    .empty-state p {
+      font-size: 1.3rem;
+      letter-spacing: 3px;
+      text-align: center;
+    }
+
+    /* ── CALL BANNER (pulses when orders are ready) ── */
+    .call-banner {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--green);
+      color: #fff;
+      text-align: center;
+      padding: 18px;
+      font-family: 'Anton', sans-serif;
+      font-size: 2.2rem;
+      letter-spacing: 4px;
+      z-index: 200;
+      animation: bannerPulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes bannerPulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.8; }
+    }
+
+    .call-banner.visible { display: block; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .topbar { padding: 14px 18px; }
+      .topbar h1 { font-size: 2rem; }
+      .board { grid-template-columns: 1fr; }
+      .board-col { border-right: none; border-bottom: 1px solid var(--border); }
+      .col-header h2 { font-size: 2rem; }
+      .order-number { font-size: 2.4rem; }
+      .call-banner { font-size: 1.4rem; }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <h1>BORO BBQ</h1>
+    <div class="topbar-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE
+      </div>
+      <a href="index.html">
+        <button class="back-btn">← KIOSK</button>
+      </a>
+    </div>
+  </header>
+
+  <!-- BOARD -->
+  <div class="board">
+
+    <!-- PREPARING -->
+    <div class="board-col">
+      <div class="col-header preparing">
+        <h2>PREPARING</h2>
+        <span class="col-count" id="countPreparing">0</span>
+      </div>
+      <div class="orders-grid" id="colPreparing"></div>
+    </div>
+
+    <!-- READY -->
+    <div class="board-col">
+      <div class="col-header ready">
+        <h2>READY!</h2>
+        <span class="col-count" id="countReady">0</span>
+      </div>
+      <div class="orders-grid" id="colReady"></div>
+    </div>
+
+  </div>
+
+  <!-- COLLECT BANNER (shown when any order is ready) -->
+  <div class="call-banner" id="callBanner">
+    🔔 &nbsp; ORDER READY FOR COLLECTION — CHECK YOUR NUMBER ABOVE &nbsp; 🔔
+  </div>
+
+  <script type="module">
+
+    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAJnS04WcEaSizVnd92hprBiml1XP7vzoE",
+      authDomain:        "borobbqorders.firebaseapp.com",
+      projectId:         "borobbqorders",
+      storageBucket:     "borobbqorders.firebasestorage.app",
+      messagingSenderId: "608958491192",
+      appId:             "1:608958491192:web:a35df22ce7067f582d54cd"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const colPreparingEl  = document.getElementById("colPreparing");
+    const colReadyEl      = document.getElementById("colReady");
+    const countPreparingEl = document.getElementById("countPreparing");
+    const countReadyEl    = document.getElementById("countReady");
+    const callBanner      = document.getElementById("callBanner");
+
+    function formatTime(ts) {
+      if (!ts?.toDate) return "";
+      return ts.toDate().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function buildCard(order, status) {
+      const card = document.createElement("div");
+      card.className = `order-card ${status}`;
+
+      const time = formatTime(order.created);
+
+      card.innerHTML = `
+        <div class="order-label">ORDER</div>
+        <div class="order-number">#${order.orderNumber ?? "—"}</div>
+        ${time ? `<div class="order-time">${time}</div>` : ""}
+      `;
+
+      return card;
+    }
+
+    function emptyState(icon, msg) {
+      const div = document.createElement("div");
+      div.className = "empty-state";
+      div.innerHTML = `<div class="empty-icon">${icon}</div><p>${msg}</p>`;
+      return div;
+    }
+
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+
+      colPreparingEl.innerHTML = "";
+      colReadyEl.innerHTML     = "";
+
+      let cntPreparing = 0;
+      let cntReady     = 0;
+
+      // Sort oldest first so earliest orders appear top-left
+      const docs = [];
+      snapshot.forEach(d => docs.push(d));
+      docs.sort((a, b) => {
+        const tA = a.data().created?.toMillis?.() ?? 0;
+        const tB = b.data().created?.toMillis?.() ?? 0;
+        return tA - tB;
+      });
+
+      docs.forEach(docSnap => {
+        const order = docSnap.data();
+
+        // Skip completed orders — they shouldn't appear on the customer board
+        if (order.completed === true) return;
+
+        if (order.status === "Ready") {
+          colReadyEl.appendChild(buildCard(order, "ready"));
+          cntReady++;
+        } else {
+          // "Preparing" or any other non-complete status
+          colPreparingEl.appendChild(buildCard(order, "preparing"));
+          cntPreparing++;
+        }
+      });
+
+      // Empty states
+      if (cntPreparing === 0) {
+        colPreparingEl.appendChild(emptyState("🍳", "NO ORDERS PREPARING"));
+      }
+      if (cntReady === 0) {
+        colReadyEl.appendChild(emptyState("✅", "NO ORDERS READY YET"));
+      }
+
+      // Counts
+      countPreparingEl.textContent = cntPreparing;
+      countReadyEl.textContent     = cntReady;
+
+      // Show/hide collection banner
+      if (cntReady > 0) {
+        callBanner.classList.add("visible");
+      } else {
+        callBanner.classList.remove("visible");
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>
