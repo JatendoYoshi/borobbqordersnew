@@ -244,6 +244,45 @@
       font-family: 'Bebas Neue', sans-serif;
       letter-spacing: 1px;
     }
+
+    /* ── ORDER ID FIELD ── */
+    .order-id-row {
+      margin-bottom: 12px;
+    }
+    .order-id-row label {
+      display: block;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+    #orderIdInput {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #orderIdInput:focus {
+      border-color: #f5c400;
+    }
+    #orderIdInput::placeholder {
+      color: #555;
+    }
+    .order-id-error {
+      color: #ff6b6b;
+      font-size: 0.8rem;
+      margin-top: 6px;
+      display: none;
+    }
   </style>
 </head>
 
@@ -282,6 +321,13 @@
     <div class="cart-footer">
       <div id="discountBar"></div>
       <div id="subtotalRow" class="cart-subtotal hidden"></div>
+
+      <div class="order-id-row">
+        <label for="orderIdInput">ORDER ID (optional)</label>
+        <input id="orderIdInput" type="text" placeholder="Leave blank for auto-generated" />
+        <div class="order-id-error" id="orderIdError">Order ID must be numeric.</div>
+      </div>
+
       <h3>TOTAL: £<span id="total">0.00</span></h3>
       <button id="discountBtn">🏷 APPLY DISCOUNT</button>
       <button id="checkoutBtn">PLACE ORDER</button>
@@ -345,7 +391,7 @@
         id: 4,
         name: "The Classic Mix",
         desc: "BigMak and a Grilled Hotdog — add your toppings to each!",
-        price: 6.00,
+        price: 6.50,
         image: "https://images.unsplash.com/photo-1561758033-7e924f619b47",
         comboItems: ["BigMak", "Grilled Hotdog"]
       },
@@ -353,7 +399,7 @@
         id: 5,
         name: "The Ultimate Mix",
         desc: "Loaded BigMak and a Grilled Hotdog — add your toppings to each!",
-        price: 6.50,
+        price: 7.00,
         image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086",
         comboItems: ["Loaded BigMak", "Grilled Hotdog"]
       }
@@ -743,6 +789,28 @@
 
       if (!cart.length) { alert("Your cart is empty!"); return; }
 
+      // Read custom order ID (if provided)
+      const orderIdInput = document.getElementById("orderIdInput");
+      const orderIdError = document.getElementById("orderIdError");
+      const rawOrderId   = orderIdInput.value.trim();
+
+      let orderNumber;
+
+      if (rawOrderId === "") {
+        // No custom ID provided — auto-generate as before
+        orderNumber = Math.floor(1000 + Math.random() * 9000);
+        orderIdError.style.display = "none";
+      } else if (/^\d+$/.test(rawOrderId)) {
+        // Valid numeric custom ID
+        orderNumber = Number(rawOrderId);
+        orderIdError.style.display = "none";
+      } else {
+        // Invalid custom ID — block checkout
+        orderIdError.style.display = "block";
+        orderIdInput.focus();
+        return;
+      }
+
       const btn = document.getElementById("checkoutBtn");
       btn.disabled    = true;
       btn.textContent = "PLACING ORDER...";
@@ -753,7 +821,7 @@
         const total        = subtotal - discountAmt;
 
         const orderData = {
-          orderNumber:   Math.floor(1000 + Math.random() * 9000),
+          orderNumber:   orderNumber,
           items:         cart.map(item => ({
             id:             item.id,
             name:           item.name,
@@ -774,6 +842,7 @@
         alert(`Order #${orderData.orderNumber} placed successfully!`);
         cart.length = 0;
         discount    = 0;
+        orderIdInput.value = "";
         updateCart();
         document.getElementById("cart").classList.add("hidden");
         document.getElementById("overlay").classList.add("hidden");
