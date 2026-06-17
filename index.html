@@ -95,6 +95,15 @@
       border-radius: 4px;
       font-weight: bold;
     }
+    .modal-option .free-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      background: #2ecc71;
+      color: #111;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
 
     .modal-footer {
       display: flex;
@@ -393,7 +402,8 @@
         desc: "BigMak and a Grilled Hotdog — add your toppings to each!",
         price: 6.50,
         image: "https://images.unsplash.com/photo-1561758033-7e924f619b47",
-        comboItems: ["BigMak", "Grilled Hotdog"]
+        comboItems: ["BigMak", "Grilled Hotdog"],
+        freeToppings: true   // ← toppings are free for this combo
       },
     ];
 
@@ -485,33 +495,30 @@
     const modalBox     = document.getElementById("modalBox");
 
     function openModal(item, isCombo) {
+      const freeToppings = isCombo && item.freeToppings;
+
       let inner = `
         <h2>${item.name}</h2>
-        <p class="modal-subtitle">£${item.price.toFixed(2)} — customise your order below</p>
+        <p class="modal-subtitle">£${item.price.toFixed(2)} — customise your order below${freeToppings ? ' · <span style="color:#2ecc71;font-weight:bold;">Extra toppings free!</span>' : ''}</p>
       `;
 
-if (isCombo) {
-  item.comboItems.forEach(subName => {
-    const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
-    const subOpts = [];
-    ADD_OPTS.forEach((opt, i) => {
-      const cb = document.getElementById(`combo_${safeName}_add_${i}`);
-      if (cb?.checked) {
-        // ✅ REMOVED: extraCost += opt.extra;  — toppings are free for combos
-        subOpts.push(opt.label);
-      }
-    });
-    customisations.push({ itemName: subName, opts: subOpts });
-  });
-}
+      if (isCombo) {
+        item.comboItems.forEach(subName => {
+          const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
+          inner += `<div class="modal-item-label">🍔 ${subName}</div>`;
+          inner += `<div class="modal-section-title">ADD TOPPINGS</div>`;
+          ADD_OPTS.forEach((opt, i) => {
+            inner += optionHTML(`combo_${safeName}_add_${i}`, opt, freeToppings);
+          });
+        });
       } else {
         inner += `<div class="modal-section-title">REMOVE</div>`;
         REMOVE_OPTS.forEach((opt, i) => {
-          inner += optionHTML(`remove_${i}`, opt);
+          inner += optionHTML(`remove_${i}`, opt, false);
         });
         inner += `<div class="modal-section-title">ADD / SAUCE</div>`;
         ADD_OPTS.forEach((opt, i) => {
-          inner += optionHTML(`add_${i}`, opt);
+          inner += optionHTML(`add_${i}`, opt, false);
         });
       }
 
@@ -535,12 +542,19 @@ if (isCombo) {
       modalOverlay.classList.remove("hidden");
     }
 
-    function optionHTML(id, opt) {
+    // freeToppings: when true, show a FREE badge instead of the price badge
+    function optionHTML(id, opt, freeToppings) {
+      let badge = "";
+      if (opt.extra > 0) {
+        badge = freeToppings
+          ? `<span class="free-badge">FREE</span>`
+          : `<span class="extra-badge">+£${opt.extra.toFixed(2)}</span>`;
+      }
       return `
         <label class="modal-option" for="${id}">
           <input type="checkbox" id="${id}" />
           ${opt.label}
-          ${opt.extra > 0 ? `<span class="extra-badge">+£${opt.extra.toFixed(2)}</span>` : ""}
+          ${badge}
         </label>
       `;
     }
@@ -554,6 +568,7 @@ if (isCombo) {
       if (!item) { console.error("confirmAdd: no item"); return; }
       let extraCost = 0;
       const customisations = [];
+      const freeToppings = isCombo && item.freeToppings;
 
       if (isCombo) {
         item.comboItems.forEach(subName => {
@@ -562,7 +577,10 @@ if (isCombo) {
           ADD_OPTS.forEach((opt, i) => {
             const cb = document.getElementById(`combo_${safeName}_add_${i}`);
             if (cb?.checked) {
-              extraCost += opt.extra;
+              // Only charge for extras if this combo doesn't have free toppings
+              if (!freeToppings) {
+                extraCost += opt.extra;
+              }
               subOpts.push(opt.label);
             }
           });
@@ -601,7 +619,6 @@ if (isCombo) {
     ========================= */
 
     function openDiscountModal() {
-      // Track which preset is currently hovered/selected for live preview
       let pendingDiscount = discount;
 
       function buildDiscountModal() {
@@ -650,42 +667,34 @@ if (isCombo) {
           </div>
         `;
 
-        // Preset buttons
         modalBox.querySelectorAll(".preset-btn").forEach(btn => {
           btn.addEventListener("click", () => {
             const val = Number(btn.dataset.val) / 100;
-            // Toggle off if already selected
             pendingDiscount = pendingDiscount === val ? 0 : val;
             document.getElementById("customDiscountInput").value = "";
-            buildDiscountModal(); // re-render preview
+            buildDiscountModal();
           });
         });
 
-        // Custom input live preview
         document.getElementById("customDiscountInput").addEventListener("input", (e) => {
           const val = parseFloat(e.target.value);
           if (!isNaN(val) && val > 0 && val < 100) {
             pendingDiscount = val / 100;
-            // Deselect presets visually
             modalBox.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("selected"));
           } else {
             pendingDiscount = 0;
           }
         });
 
-        // Cancel
         document.getElementById("modalCancel").addEventListener("click", closeModal);
 
-        // Remove existing discount
         document.getElementById("removeDiscountBtn")?.addEventListener("click", () => {
           discount = 0;
           updateCart();
           closeModal();
         });
 
-        // Apply
         document.getElementById("modalConfirm").addEventListener("click", () => {
-          // If custom input has a value, use that
           const customVal = parseFloat(document.getElementById("customDiscountInput").value);
           if (!isNaN(customVal) && customVal > 0 && customVal < 100) {
             discount = customVal / 100;
@@ -747,9 +756,8 @@ if (isCombo) {
         });
       });
 
-      // Discount bar
-      const discountBar   = document.getElementById("discountBar");
-      const subtotalRow   = document.getElementById("subtotalRow");
+      const discountBar = document.getElementById("discountBar");
+      const subtotalRow = document.getElementById("subtotalRow");
 
       if (discount > 0 && subtotal > 0) {
         const saving = subtotal * discount;
@@ -786,7 +794,6 @@ if (isCombo) {
 
       if (!cart.length) { alert("Your cart is empty!"); return; }
 
-      // Read custom order ID (if provided)
       const orderIdInput = document.getElementById("orderIdInput");
       const orderIdError = document.getElementById("orderIdError");
       const rawOrderId   = orderIdInput.value.trim();
@@ -794,15 +801,12 @@ if (isCombo) {
       let orderNumber;
 
       if (rawOrderId === "") {
-        // No custom ID provided — auto-generate as before
         orderNumber = Math.floor(1000 + Math.random() * 9000);
         orderIdError.style.display = "none";
       } else if (/^\d+$/.test(rawOrderId)) {
-        // Valid numeric custom ID
         orderNumber = Number(rawOrderId);
         orderIdError.style.display = "none";
       } else {
-        // Invalid custom ID — block checkout
         orderIdError.style.display = "block";
         orderIdInput.focus();
         return;
@@ -813,9 +817,9 @@ if (isCombo) {
       btn.textContent = "PLACING ORDER...";
 
       try {
-        const subtotal     = cart.reduce((sum, item) => sum + item.price, 0);
-        const discountAmt  = subtotal * discount;
-        const total        = subtotal - discountAmt;
+        const subtotal    = cart.reduce((sum, item) => sum + item.price, 0);
+        const discountAmt = subtotal * discount;
+        const total       = subtotal - discountAmt;
 
         const orderData = {
           orderNumber:   orderNumber,
