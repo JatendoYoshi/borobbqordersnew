@@ -427,6 +427,16 @@
       { label: "Spicy Mayo",               extra: 0.40 }
     ];
 
+    // Combo items use simpler names (no "Extra" prefix) since they're building from scratch
+    const COMBO_ADD_OPTS = [
+      { label: "Lettuce",            extra: 0 },
+      { label: "Tomatoes",           extra: 0 },
+      { label: "Caramelised Onions", extra: 0.40 },
+      { label: "Ketchup",            extra: 0 },
+      { label: "Mustard",            extra: 0 },
+      { label: "Spicy Mayo",         extra: 0.40 }
+    ];
+
     /* =========================
        STATE
     ========================= */
@@ -503,11 +513,12 @@
       `;
 
       if (isCombo) {
+        const optsToUse = item.freeToppings ? COMBO_ADD_OPTS : ADD_OPTS;
         item.comboItems.forEach(subName => {
           const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
           inner += `<div class="modal-item-label">🍔 ${subName}</div>`;
           inner += `<div class="modal-section-title">ADD TOPPINGS</div>`;
-          ADD_OPTS.forEach((opt, i) => {
+          optsToUse.forEach((opt, i) => {
             inner += optionHTML(`combo_${safeName}_add_${i}`, opt, freeToppings);
           });
         });
@@ -571,10 +582,11 @@
       const freeToppings = isCombo && item.freeToppings;
 
       if (isCombo) {
+        const optsToUse = freeToppings ? COMBO_ADD_OPTS : ADD_OPTS;
         item.comboItems.forEach(subName => {
           const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
           const subOpts = [];
-          ADD_OPTS.forEach((opt, i) => {
+          optsToUse.forEach((opt, i) => {
             const cb = document.getElementById(`combo_${safeName}_add_${i}`);
             if (cb?.checked) {
               // Only charge for extras if this combo doesn't have free toppings
