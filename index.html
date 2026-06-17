@@ -395,14 +395,6 @@
         image: "https://images.unsplash.com/photo-1561758033-7e924f619b47",
         comboItems: ["BigMak", "Grilled Hotdog"]
       },
-      {
-        id: 5,
-        name: "The Ultimate Mix",
-        desc: "Loaded BigMak and a Grilled Hotdog — add your toppings to each!",
-        price: 7.00,
-        image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086",
-        comboItems: ["Loaded BigMak", "Grilled Hotdog"]
-      }
     ];
 
     /* =========================
@@ -498,15 +490,20 @@
         <p class="modal-subtitle">£${item.price.toFixed(2)} — customise your order below</p>
       `;
 
-      if (isCombo) {
-        item.comboItems.forEach(subName => {
-          const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
-          inner += `<div class="modal-item-label">🍔 ${subName}</div>`;
-          inner += `<div class="modal-section-title">ADD TOPPINGS</div>`;
-          ADD_OPTS.forEach((opt, i) => {
-            inner += optionHTML(`combo_${safeName}_add_${i}`, opt);
-          });
-        });
+if (isCombo) {
+  item.comboItems.forEach(subName => {
+    const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
+    const subOpts = [];
+    ADD_OPTS.forEach((opt, i) => {
+      const cb = document.getElementById(`combo_${safeName}_add_${i}`);
+      if (cb?.checked) {
+        // ✅ REMOVED: extraCost += opt.extra;  — toppings are free for combos
+        subOpts.push(opt.label);
+      }
+    });
+    customisations.push({ itemName: subName, opts: subOpts });
+  });
+}
       } else {
         inner += `<div class="modal-section-title">REMOVE</div>`;
         REMOVE_OPTS.forEach((opt, i) => {
