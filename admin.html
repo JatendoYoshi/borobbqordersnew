@@ -88,6 +88,21 @@
       color: #fff;
     }
 
+    /* ── ELAPSED TIME BADGE ── */
+    .elapsed-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: #2a2a2a;
+      color: #aaa;
+      white-space: nowrap;
+      transition: background 0.3s, color 0.3s;
+    }
+    .elapsed-badge.warn  { background: #7a4a00; color: #ffb703; }
+    .elapsed-badge.alert { background: #5a0000; color: #ff6b6b; }
+
     .order-time {
       font-size: 0.85rem;
       color: #888;
@@ -167,7 +182,7 @@
     <a href="index.html">
       <button class="back-btn">← RETURN TO KIOSK</button>
     </a>
-      <a href="customerboard.html">
+    <a href="customerboard.html">
       <button class="back-btn">Customer Dashboard</button>
     </a>
     <button id="clearAllBtn" style="background:#c0392b;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;">🗑 CLEAR ALL ORDERS</button>
@@ -248,6 +263,37 @@
       await updateDoc(doc(db, "orders", id), { status, completed });
     }
 
+    /* =========================
+       ELAPSED TIME BADGE
+    ========================= */
+
+    // Returns a human-readable elapsed string and a severity class
+    function elapsedInfo(createdMillis) {
+      const mins = Math.floor((Date.now() - createdMillis) / 60000);
+      let text, cls;
+      if (mins < 1)        { text = "Just now";          cls = ""; }
+      else if (mins < 5)   { text = `${mins}m ago`;      cls = ""; }
+      else if (mins < 10)  { text = `${mins}m ago`;      cls = "warn"; }
+      else                 { text = `${mins}m ago`;       cls = "alert"; }
+      return { text, cls };
+    }
+
+    // Keeps all elapsed badges ticking every 30 seconds
+    function startElapsedTicker() {
+      setInterval(() => {
+        document.querySelectorAll(".elapsed-badge[data-created]").forEach(badge => {
+          const createdMillis = Number(badge.dataset.created);
+          const { text, cls } = elapsedInfo(createdMillis);
+          badge.textContent = text;
+          badge.className   = "elapsed-badge" + (cls ? ` ${cls}` : "");
+        });
+      }, 30000);
+    }
+
+    /* =========================
+       BUILD ORDER CARD
+    ========================= */
+
     function createCard(docId, order) {
 
       const status      = order.status ?? "Preparing";
@@ -259,12 +305,20 @@
       const card = document.createElement("div");
       card.className = `admin-order-card ${statusCls}`;
 
-      const createdAt = order.created?.toDate
-        ? order.created.toDate().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+      const createdMillis = order.created?.toMillis?.() ?? null;
+
+      const createdAt = createdMillis
+        ? new Date(createdMillis).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
         : "";
 
+      // Elapsed badge (only shown on non-completed cards so it's useful)
+      let elapsedHTML = "";
+      if (createdMillis && !isCompleted) {
+        const { text, cls } = elapsedInfo(createdMillis);
+        elapsedHTML = `<span class="elapsed-badge${cls ? ` ${cls}` : ""}" data-created="${createdMillis}">${text}</span>`;
+      }
+
       const itemsHTML = (order.items || []).map(item => {
-        // customisations is array of { itemName, opts[] }
         let customsHTML = "";
         if (item.customisations?.length) {
           item.customisations.forEach(c => {
@@ -293,6 +347,7 @@
       card.innerHTML = `
         <div class="order-top">
           <h2>ORDER #${order.orderNumber ?? "—"}</h2>
+          ${elapsedHTML}
         </div>
         ${createdAt ? `<div class="order-time">Placed at ${createdAt}</div>` : ""}
         <div class="items">${itemsHTML}</div>
@@ -337,6 +392,10 @@
       return card;
     }
 
+    /* =========================
+       LIVE SNAPSHOT
+    ========================= */
+
     onSnapshot(collection(db, "orders"), (snapshot) => {
 
       const colPreparing = document.getElementById("colPreparing");
@@ -352,44 +411,36 @@
       let cntReady     = 0;
       let cntCompleted = 0;
 
-      // Sort oldest → newest so most recent orders appear at bottom
       const docs = [];
       snapshot.forEach(docSnap => docs.push(docSnap));
+
+      // Default sort: newest first (used for Ready + Completed)
       docs.sort((a, b) => {
         const tA = a.data().created?.toMillis?.() ?? 0;
         const tB = b.data().created?.toMillis?.() ?? 0;
         return tB - tA;
       });
 
-      docs.forEach((docSnap) => {
-        const order = docSnap.data();
-        totalRevenue += order.total ?? 0;
+      // Split into three groups
+      const preparing = docs.filter(d => !d.data().completed && d.data().status !== "Ready");
+      const ready     = docs.filter(d => !d.data().completed && d.data().status === "Ready");
+      const completed = docs.filter(d => d.data().completed === true);
 
-        if (order.completed === true) {
-          colCompleted.appendChild(createCard(docSnap.id, order));
-          cntCompleted++;
-        } else if (order.status === "Ready") {
-          colReady.appendChild(createCard(docSnap.id, order));
-          cntReady++;
-        } else {
-          colPreparing.appendChild(createCard(docSnap.id, order));
-          cntPreparing++;
-        }
-      });
+      // Preparing: oldest first so the longest-waiting order is at the top
+      preparing.sort((a, b) => (a.data().created?.toMillis?.() ?? 0) - (b.data().created?.toMillis?.() ?? 0));
+
+      preparing.forEach(d => { colPreparing.appendChild(createCard(d.id, d.data())); cntPreparing++; totalRevenue += d.data().total ?? 0; });
+      ready.forEach(d =>     { colReady.appendChild(createCard(d.id, d.data()));     cntReady++;     totalRevenue += d.data().total ?? 0; });
+      completed.forEach(d => { colCompleted.appendChild(createCard(d.id, d.data())); cntCompleted++; totalRevenue += d.data().total ?? 0; });
 
       if (!cntPreparing) colPreparing.innerHTML = `<p class="empty-msg">No orders preparing.</p>`;
       if (!cntReady)     colReady.innerHTML     = `<p class="empty-msg">No orders ready.</p>`;
       if (!cntCompleted) colCompleted.innerHTML = `<p class="empty-msg">No completed orders.</p>`;
+
       // Auto-delete oldest completed orders once cap of 5 is exceeded
-      const completedDocs = docs.filter(d => d.data().completed === true);
-      completedDocs.sort((a, b) => {
-        const tA = a.data().created?.toMillis?.() ?? 0;
-        const tB = b.data().created?.toMillis?.() ?? 0;
-        return tA - tB; // oldest first
-      });
-      if (completedDocs.length > 5) {
-        const toDelete = completedDocs.slice(0, completedDocs.length - 5);
-        toDelete.forEach(d => deleteDoc(doc(db, "orders", d.id)));
+      const completedSorted = [...completed].sort((a, b) => (a.data().created?.toMillis?.() ?? 0) - (b.data().created?.toMillis?.() ?? 0));
+      if (completedSorted.length > 5) {
+        completedSorted.slice(0, completedSorted.length - 5).forEach(d => deleteDoc(doc(db, "orders", d.id)));
       }
 
       document.getElementById("countPreparing").textContent = cntPreparing;
@@ -415,6 +466,12 @@
 
       alert("All orders cleared.");
     });
+
+    /* =========================
+       START ELAPSED TICKER
+    ========================= */
+
+    startElapsedTicker();
 
   </script>
 
