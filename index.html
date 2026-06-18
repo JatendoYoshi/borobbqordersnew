@@ -80,7 +80,8 @@
       transition: background 0.15s;
     }
     .modal-option:hover { background: #2a2a2a; }
-    .modal-option input[type="checkbox"] {
+    .modal-option input[type="checkbox"],
+    .modal-option input[type="radio"] {
       width: 17px;
       height: 17px;
       accent-color: #f5c400;
@@ -399,12 +400,24 @@
       {
         id: 4,
         name: "The Classic Mix",
-        desc: "BigMak and a Grilled Hotdog — add your toppings to each!",
+        desc: "C-Mak and a Grilled Hotdog — add your toppings to each!",
         price: 6.50,
         image: "https://images.unsplash.com/photo-1561758033-7e924f619b47",
-        comboItems: ["BigMak", "Grilled Hotdog"],
-        freeToppings: true   // ← toppings are free for this combo
+        comboItems: ["C-Mak", "Grilled Hotdog"],
+        freeToppings: true
       },
+    ];
+
+    const DRINKS = [
+      {
+        id: 5,
+        name: "Can (Any)",
+        desc: "Pick from Irn Bru, Coke, Fanta, or Dr Pepper.",
+        price: 1.00,
+        image: "https://images.unsplash.com/photo-1581098365948-6a5a912b7a49",
+        isDrink: true,
+        options: ["Irn Bru", "Coke", "Fanta", "Dr Pepper"]
+      }
     ];
 
     /* =========================
@@ -473,10 +486,11 @@
       MAINS.forEach(item => mainsGrid.appendChild(buildCard(item, false)));
       menuRoot.appendChild(mainsGrid);
 
-      menuRoot.appendChild(makeSectionTitle("COMBOS"));
+      menuRoot.appendChild(makeSectionTitle("COMBOS & DRINKS"));
       const combosGrid = document.createElement("section");
       combosGrid.className = "menu";
       COMBOS.forEach(item => combosGrid.appendChild(buildCard(item, true)));
+      DRINKS.forEach(item => combosGrid.appendChild(buildCard(item, false)));
       menuRoot.appendChild(combosGrid);
     }
 
@@ -512,7 +526,17 @@
         <p class="modal-subtitle">£${item.price.toFixed(2)} — customise your order below${freeToppings ? ' · <span style="color:#2ecc71;font-weight:bold;">Extra toppings free!</span>' : ''}</p>
       `;
 
-      if (isCombo) {
+      if (item.isDrink) {
+        inner += `<div class="modal-section-title">CHOOSE YOUR DRINK</div>`;
+        item.options.forEach((opt, i) => {
+          inner += `
+            <label class="modal-option" for="drink_${i}">
+              <input type="radio" name="drinkChoice" id="drink_${i}" value="${opt}" ${i === 0 ? "checked" : ""} />
+              ${opt}
+            </label>
+          `;
+        });
+      } else if (isCombo) {
         const optsToUse = item.freeToppings ? COMBO_ADD_OPTS : ADD_OPTS;
         item.comboItems.forEach(subName => {
           const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
@@ -581,7 +605,11 @@
       const customisations = [];
       const freeToppings = isCombo && item.freeToppings;
 
-      if (isCombo) {
+      if (item.isDrink) {
+        const selected = modalBox.querySelector('input[name="drinkChoice"]:checked');
+        const choice = selected ? selected.value : item.options[0];
+        customisations.push({ itemName: item.name, opts: [choice] });
+      } else if (isCombo) {
         const optsToUse = freeToppings ? COMBO_ADD_OPTS : ADD_OPTS;
         item.comboItems.forEach(subName => {
           const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
