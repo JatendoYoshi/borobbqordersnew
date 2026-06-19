@@ -126,6 +126,29 @@
       color: #fff;
     }
 
+    /* ── ORDER NOTES ── */
+    .order-notes {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #1a1a1a;
+      border: 1px solid #3a3a00;
+      border-left: 3px solid #f5c400;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #f5c400;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .order-notes strong {
+      display: block;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+      font-size: 0.8rem;
+      color: #f5c400;
+      margin-bottom: 2px;
+    }
+
     .admin-buttons {
       display: flex;
       flex-wrap: wrap;
@@ -344,6 +367,10 @@
         `;
       }).join("");
 
+      const notesHTML = order.notes
+        ? `<div class="order-notes"><strong>📝 NOTES</strong>${order.notes}</div>`
+        : "";
+
       card.innerHTML = `
         <div class="order-top">
           <h2>ORDER #${order.orderNumber ?? "—"}</h2>
@@ -352,6 +379,7 @@
         ${createdAt ? `<div class="order-time">Placed at ${createdAt}</div>` : ""}
         <div class="items">${itemsHTML}</div>
         <div class="order-total">TOTAL: £${(order.total ?? 0).toFixed(2)}</div>
+        ${notesHTML}
       `;
 
       const btns = document.createElement("div");
