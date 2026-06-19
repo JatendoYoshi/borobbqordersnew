@@ -293,6 +293,40 @@
       margin-top: 6px;
       display: none;
     }
+
+    /* ── ORDER NOTES FIELD ── */
+    .order-notes-row {
+      margin-bottom: 12px;
+    }
+    .order-notes-row label {
+      display: block;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+    #orderNotesInput {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      resize: vertical;
+      min-height: 50px;
+      transition: border-color 0.15s;
+    }
+    #orderNotesInput:focus {
+      border-color: #f5c400;
+    }
+    #orderNotesInput::placeholder {
+      color: #555;
+    }
   </style>
 </head>
 
@@ -336,6 +370,11 @@
         <label for="orderIdInput">ORDER ID (optional)</label>
         <input id="orderIdInput" type="text" placeholder="Leave blank for auto-generated" />
         <div class="order-id-error" id="orderIdError">Order ID must be numeric.</div>
+      </div>
+
+      <div class="order-notes-row">
+        <label for="orderNotesInput">ORDER NOTES (optional)</label>
+        <textarea id="orderNotesInput" placeholder="e.g. allergy info, table number, special requests"></textarea>
       </div>
 
       <h3>TOTAL: £<span id="total">0.00</span></h3>
@@ -392,14 +431,15 @@
         name: "Grilled Hotdog",
         desc: "A freshly-grilled sausage nestled in a soft brioche bun. Finished with a choice of classic sauces and caramelised onions.",
         price: 2.50,
-        image: "https://images.unsplash.com/photo-1612392166886-ee8475b03af2"
+        image: "https://images.unsplash.com/photo-1612392166886-ee8475b03af2",
+        noProduce: true
       }
     ];
 
     const COMBOS = [
       {
         id: 4,
-        name: "The Classic Mix",
+        name: "The Classic Combo",
         desc: "C-Mak and a Grilled Hotdog — add your toppings to each!",
         price: 6.50,
         image: "https://images.unsplash.com/photo-1561758033-7e924f619b47",
@@ -437,6 +477,7 @@
       { label: "Extra Caramelised Onions", extra: 0.40 },
       { label: "Ketchup",                  extra: 0 },
       { label: "Mustard",                  extra: 0 },
+      { label: "Mayo",                     extra: 0 },
       { label: "Spicy Mayo",               extra: 0.40 }
     ];
 
@@ -447,8 +488,16 @@
       { label: "Caramelised Onions", extra: 0.40 },
       { label: "Ketchup",            extra: 0 },
       { label: "Mustard",            extra: 0 },
+      { label: "Mayo",               extra: 0 },
       { label: "Spicy Mayo",         extra: 0.40 }
     ];
+
+    // Items marked "noProduce" (e.g. the Grilled Hotdog) don't have lettuce/tomatoes
+    // to begin with, so filter those options out of whatever list is being shown.
+    function filterProduce(opts, excludeProduce) {
+      if (!excludeProduce) return opts;
+      return opts.filter(o => !/tomato|lettuce/i.test(o.label));
+    }
 
     /* =========================
        STATE
@@ -540,19 +589,24 @@
         const optsToUse = item.freeToppings ? COMBO_ADD_OPTS : ADD_OPTS;
         item.comboItems.forEach(subName => {
           const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
+          const subNoProduce = subName === "Grilled Hotdog";
+          const subOptsToUse = filterProduce(optsToUse, subNoProduce);
           inner += `<div class="modal-item-label">🍔 ${subName}</div>`;
           inner += `<div class="modal-section-title">ADD TOPPINGS</div>`;
-          optsToUse.forEach((opt, i) => {
+          subOptsToUse.forEach((opt, i) => {
             inner += optionHTML(`combo_${safeName}_add_${i}`, opt, freeToppings);
           });
         });
       } else {
+        const itemRemoveOpts = filterProduce(REMOVE_OPTS, item.noProduce);
+        const itemAddOpts    = filterProduce(ADD_OPTS, item.noProduce);
+
         inner += `<div class="modal-section-title">REMOVE</div>`;
-        REMOVE_OPTS.forEach((opt, i) => {
+        itemRemoveOpts.forEach((opt, i) => {
           inner += optionHTML(`remove_${i}`, opt, false);
         });
         inner += `<div class="modal-section-title">ADD / SAUCE</div>`;
-        ADD_OPTS.forEach((opt, i) => {
+        itemAddOpts.forEach((opt, i) => {
           inner += optionHTML(`add_${i}`, opt, false);
         });
       }
@@ -613,8 +667,10 @@
         const optsToUse = freeToppings ? COMBO_ADD_OPTS : ADD_OPTS;
         item.comboItems.forEach(subName => {
           const safeName = subName.replace(/[^a-zA-Z0-9]/g, "_");
+          const subNoProduce = subName === "Grilled Hotdog";
+          const subOptsToUse = filterProduce(optsToUse, subNoProduce);
           const subOpts = [];
-          optsToUse.forEach((opt, i) => {
+          subOptsToUse.forEach((opt, i) => {
             const cb = document.getElementById(`combo_${safeName}_add_${i}`);
             if (cb?.checked) {
               // Only charge for extras if this combo doesn't have free toppings
@@ -627,12 +683,15 @@
           customisations.push({ itemName: subName, opts: subOpts });
         });
       } else {
+        const itemRemoveOpts = filterProduce(REMOVE_OPTS, item.noProduce);
+        const itemAddOpts    = filterProduce(ADD_OPTS, item.noProduce);
+
         const opts = [];
-        REMOVE_OPTS.forEach((opt, i) => {
+        itemRemoveOpts.forEach((opt, i) => {
           const cb = document.getElementById(`remove_${i}`);
           if (cb?.checked) opts.push(opt.label);
         });
-        ADD_OPTS.forEach((opt, i) => {
+        itemAddOpts.forEach((opt, i) => {
           const cb = document.getElementById(`add_${i}`);
           if (cb?.checked) {
             extraCost += opt.extra;
@@ -838,6 +897,9 @@
       const orderIdError = document.getElementById("orderIdError");
       const rawOrderId   = orderIdInput.value.trim();
 
+      const orderNotesInput = document.getElementById("orderNotesInput");
+      const rawNotes         = orderNotesInput.value.trim();
+
       let orderNumber;
 
       if (rawOrderId === "") {
@@ -873,6 +935,7 @@
           discountPct:   Math.round(discount * 100),
           discountAmt:   discountAmt,
           total:         total,
+          notes:         rawNotes,
           status:        "Preparing",
           completed:     false,
           created:       new Date()
@@ -884,6 +947,7 @@
         cart.length = 0;
         discount    = 0;
         orderIdInput.value = "";
+        orderNotesInput.value = "";
         updateCart();
         document.getElementById("cart").classList.add("hidden");
         document.getElementById("overlay").classList.add("hidden");
