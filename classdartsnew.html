@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClassTrack — Behaviour Tracker</title>
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --panel:#ffffff;
+    --ink:#1f2733;
+    --muted:#6b7688;
+    --line:#e4e8f0;
+    --brand:#3b5bdb;
+    --brand-dark:#2f4bbd;
+    --good:#2f9e44;
+    --good-bg:#ebfbee;
+    --bad:#e03131;
+    --bad-bg:#fff5f5;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.app{
+    background:linear-gradient(120deg,var(--brand),#5c7cfa);
+    color:#fff;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    box-shadow:0 2px 10px rgba(31,39,51,.12);
+  }
+  .logo{
+    width:40px;height:40px;border-radius:10px;
+    background:rgba(255,255,255,.18);
+    display:grid;place-items:center;font-size:22px;
+  }
+  header.app h1{font-size:20px;margin:0;font-weight:700;letter-spacing:.2px}
+  header.app .tag{font-size:12px;opacity:.85;margin-top:2px}
+  header.app .spacer{flex:1}
+  .header-stats{display:flex;gap:22px;text-align:right}
+  .header-stats .num{font-size:20px;font-weight:700;line-height:1}
+  .header-stats .lbl{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px}
+
+  nav.tabs{
+    display:flex;gap:4px;background:var(--panel);
+    padding:0 24px;border-bottom:1px solid var(--line);
+    position:sticky;top:76px;z-index:15;
+  }
+  nav.tabs button{
+    border:0;background:none;padding:14px 16px;font-size:14px;font-weight:600;
+    color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;
+  }
+  nav.tabs button.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+  main{max-width:1100px;margin:0 auto;padding:24px}
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:20px;margin-bottom:20px;
+  }
+  .panel h2{margin:0 0 4px;font-size:17px}
+  .panel .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;font-weight:600;color:var(--muted)}
+  input,select,textarea{
+    font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
+    min-width:180px;outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(59,91,219,.12)}
+  textarea{min-height:60px;resize:vertical;width:100%}
+
+  button.btn{
+    font:inherit;font-weight:600;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;
+    background:var(--brand);color:#fff;transition:filter .15s;
+  }
+  button.btn:hover{filter:brightness(1.05)}
+  button.btn.ghost{background:#eef1f8;color:var(--brand)}
+  button.btn.good{background:var(--good)}
+  button.btn.bad{background:var(--bad)}
+  button.btn.sm{padding:6px 10px;font-size:13px}
+  button.btn.danger{background:#fff;color:var(--bad);border:1px solid #ffd0d0}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  tr:last-child td{border-bottom:0}
+  .chip{display:inline-block;background:#eef1f8;color:var(--brand);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;margin:2px 4px 2px 0}
+  .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700}
+  .badge.good{background:var(--good-bg);color:var(--good)}
+  .badge.bad{background:var(--bad-bg);color:var(--bad)}
+  .pts{font-weight:700}
+  .pts.pos{color:var(--good)}
+  .pts.neg{color:var(--bad)}
+  .muted{color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
+  .right{text-align:right}
+  .pill-list{display:flex;flex-wrap:wrap;gap:6px}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(16,24,40,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+  .modal header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .modal header h3{margin:0;font-size:17px}
+  .modal .body{padding:20px;max-height:60vh;overflow:auto}
+  .modal footer{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+  .close-x{margin-left:auto;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1}
+  .behaviour-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .b-opt{border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .b-opt:hover{border-color:var(--brand);background:#f7f9ff}
+  .b-opt.selected{border-color:var(--brand);background:#eef1f8}
+  .b-opt.bad-opt:hover,.b-opt.bad-opt.selected{border-color:var(--bad);background:var(--bad-bg)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:8px 14px;font-weight:600;cursor:pointer;color:var(--muted)}
+  .seg button.active{background:var(--brand);color:#fff}
+  .seg button.active.bad-seg{background:var(--bad)}
+  .seg button.active.good-seg{background:var(--good)}
+
+  /* report */
+  .report-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px}
+  .summary-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .card .num{font-size:26px;font-weight:800;line-height:1.1}
+  .card .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  .report-meta{font-size:13px;color:var(--muted);margin-bottom:10px}
+  #reportArea h3{margin:18px 0 8px;font-size:15px}
+
+  @media (max-width:720px){
+    .summary-cards{grid-template-columns:repeat(2,1fr)}
+    .behaviour-grid{grid-template-columns:1fr}
+    .header-stats{display:none}
+  }
+
+  /* print */
+  @media print{
+    header.app,nav.tabs,.report-controls,.no-print,.overlay{display:none !important}
+    body{background:#fff}
+    main{max-width:none;padding:0}
+    .panel{box-shadow:none;border:0;padding:0}
+    #printHeader{display:block !important}
+  }
+  #printHeader{display:none;margin-bottom:14px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+  #printHeader h2{font-size:22px;margin:0}
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="logo">🎓</div>
+  <div>
+    <h1>ClassTrack</h1>
+    <div class="tag">Student Behaviour Tracker</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="header-stats">
+    <div><div class="num" id="statStudents">0</div><div class="lbl">Students</div></div>
+    <div><div class="num" id="statClasses">0</div><div class="lbl">Classes</div></div>
+    <div><div class="num" id="statRecords">0</div><div class="lbl">Records</div></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="dashboard" class="active">Dashboard</button>
+  <button data-tab="students">Students &amp; Classes</button>
+  <button data-tab="reports">Reports</button>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard">
+    <div class="panel">
+      <h2>Quick Award</h2>
+      <p class="sub">Record a good or bad behaviour. The time is logged automatically.</p>
+      <div class="row">
+        <div class="field">
+          <label>Student</label>
+          <select id="quickStudent"></select>
+        </div>
+        <button class="btn good" id="quickGood">👍 Award Good</button>
+        <button class="btn bad" id="quickBad">👎 Note Bad</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Recent Activity</h2>
+      <p class="sub">The latest behaviour records across all classes.</p>
+      <div id="recentWrap"></div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="tab-students" style="display:none">
+    <div class="panel">
+      <h2>Add a Student</h2>
+      <p class="sub">Create a student, then assign them to one or more classes.</p>
+      <div class="row">
+        <div class="field">
+          <label>Student name</label>
+          <input id="newStudentName" placeholder="e.g. Ava Thompson">
+        </div>
+        <button class="btn" id="addStudentBtn">+ Add Student</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Manage Classes</h2>
+      <p class="sub">Classes can be shared by many students. Add a class to the list below.</p>
+      <div class="row">
+        <div class="field">
+          <label>Class name</label>
+          <input id="newClassName" placeholder="e.g. 7B Mathematics">
+        </div>
+        <button class="btn ghost" id="addClassBtn">+ Add Class</button>
+      </div>
+      <div class="pill-list" id="classPills" style="margin-top:14px"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Students</h2>
+      <p class="sub">Each student can belong to many classes. Use “Manage classes” to assign.</p>
+      <div id="studentsWrap"></div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="tab-reports" style="display:none">
+    <div class="panel">
+      <div id="printHeader"><h2>ClassTrack — Behaviour Report</h2></div>
+      <div class="no-print">
+        <h2>Generate Report</h2>
+        <p class="sub">Choose a period and optionally filter by class, then print or save as PDF.</p>
+        <div class="report-controls">
+          <div class="field">
+            <label>Period</label>
+            <select id="reportPeriod">
+              <option value="day">Today</option>
+              <option value="week">This week (last 7 days)</option>
+              <option value="month">This month (last 30 days)</option>
+              <option value="custom">Custom range…</option>
+            </select>
+          </div>
+          <div class="field" id="fromWrap" style="display:none">
+            <label>From</label>
+            <input type="date" id="reportFrom">
+          </div>
+          <div class="field" id="toWrap" style="display:none">
+            <label>To</label>
+            <input type="date" id="reportTo">
+          </div>
+          <div class="field">
+            <label>Class</label>
+            <select id="reportClass"><option value="">All classes</option></select>
+          </div>
+          <button class="btn" id="genReportBtn">Generate</button>
+          <button class="btn ghost" id="printReportBtn">🖨️ Print / Save PDF</button>
+        </div>
+      </div>
+      <div id="reportArea"></div>
+    </div>
+  </section>
+</main>
+
+<!-- AWARD MODAL -->
+<div class="overlay" id="awardOverlay">
+  <div class="modal">
+    <header>
+      <h3 id="awardTitle">Award Behaviour</h3>
+      <button class="close-x" data-close>&times;</button>
+    </header>
+    <div class="body">
+      <div class="field" style="width:100%">
+        <label>Student</label>
+        <input id="awardStudentLabel" disabled>
+      </div>
+      <div class="field" style="width:100%;margin-top:12px">
+        <label>Type</label>
+        <div class="seg" id="awardTypeSeg">
+          <button type="button" data-type="good" class="active good-seg">👍 Good</button>
+          <button type="button" data-type="bad">👎 Bad</button>
+        </div>
+      </div>
+      <div class="field" style="width:100%;margin-top:12px">
+        <label>Which class did they get it in?</label>
+        <select id="awardClass"></select>
+        <span class="muted" id="awardClassHint" style="font-size:12px"></span>
+      </div>
+      <div style="margin-top:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted)">Behaviour</label>
+        <div class="behaviour-grid" id="behaviourGrid"></div>
+      </div>
+      <div class="field" style="width:100%;margin-top:12px">
+        <label>Points</label>
+        <input type="number" id="awardPoints" value="1" step="1">
+      </div>
+      <div class="field" style="width:100%;margin-top:12px">
+        <label>Note (optional)</label>
+        <textarea id="awardNote" placeholder="Add any extra detail…"></textarea>
+      </div>
+    </div>
+    <footer>
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn" id="saveAwardBtn">Save Record</button>
+    </footer>
+  </div>
+</div>
+
+<!-- MANAGE CLASSES MODAL -->
+<div class="overlay" id="manageOverlay">
+  <div class="modal">
+    <header>
+      <h3 id="manageTitle">Manage Classes</h3>
+      <button class="close-x" data-close-manage>&times;</button>
+    </header>
+    <div class="body">
+      <p class="sub" style="margin-top:0">Tick the classes this student belongs to.</p>
+      <div id="manageClassList"></div>
+    </div>
+    <footer>
+      <button class="btn ghost" data-close-manage>Cancel</button>
+      <button class="btn" id="saveManageBtn">Save</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const STORE_KEY = "classtrack.v1";
+
+  const GOOD_BEHAVIOURS = ["Helping others","Great participation","Excellent work","On task","Kindness","Improvement","Homework done","Teamwork"];
+  const BAD_BEHAVIOURS  = ["Disruption","Off task","Late","No homework","Disrespect","Talking over others","Out of seat","Not listening"];
+
+  /* ---------- storage ---------- */
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){ console.warn("load failed", e); }
+    return { students:[], classes:[], records:[], seq:1 };
+  }
+  function saveState(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    catch(e){ alert("Could not save data: " + e.message); }
+  }
+  let state = loadState();
+
+  /* ---------- helpers ---------- */
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const uid = () => "id" + (state.seq++) + "-" + Math.random().toString(36).slice(2,7);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  const classById = id => state.classes.find(c=>c.id===id);
+  const studentById = id => state.students.find(s=>s.id===id);
+  function fmtDateTime(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}) + " · " +
+           d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+  }
+  function fmtDate(ts){ return new Date(ts).toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}); }
+
+  /* ---------- tabs ---------- */
+  $$("nav.tabs button").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      $$("nav.tabs button").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      ["dashboard","students","reports"].forEach(t=>{
+        $("#tab-"+t).style.display = (t===btn.dataset.tab) ? "" : "none";
+      });
+    });
+  });
+
+  /* ---------- students & classes management ---------- */
+  $("#addStudentBtn").addEventListener("click",()=>{
+    const name = $("#newStudentName").value.trim();
+    if(!name){ alert("Please enter a student name."); return; }
+    state.students.push({ id:uid(), name, classIds:[] });
+    $("#newStudentName").value = "";
+    saveState(); renderAll();
+  });
+  $("#newStudentName").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#addStudentBtn").click(); });
+
+  $("#addClassBtn").addEventListener("click",()=>{
+    const name = $("#newClassName").value.trim();
+    if(!name){ alert("Please enter a class name."); return; }
+    if(state.classes.some(c=>c.name.toLowerCase()===name.toLowerCase())){ alert("That class already exists."); return; }
+    state.classes.push({ id:uid(), name });
+    $("#newClassName").value = "";
+    saveState(); renderAll();
+  });
+  $("#newClassName").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#addClassBtn").click(); });
+
+  function deleteClass(id){
+    if(!confirm("Delete this class? It will be removed from all students. Existing records are kept.")) return;
+    state.classes = state.classes.filter(c=>c.id!==id);
+    state.students.forEach(s=>{ s.classIds = s.classIds.filter(cid=>cid!==id); });
+    saveState(); renderAll();
+  }
+  function deleteStudent(id){
+    if(!confirm("Delete this student and all their behaviour records?")) return;
+    state.students = state.students.filter(s=>s.id!==id);
+    state.records = state.records.filter(r=>r.studentId!==id);
+    saveState(); renderAll();
+  }
+
+  function renderClassPills(){
+    const wrap = $("#classPills");
+    if(!state.classes.length){ wrap.innerHTML = '<span class="muted">No classes yet.</span>'; return; }
+    wrap.innerHTML = state.classes.map(c=>{
+      const count = state.students.filter(s=>s.classIds.includes(c.id)).length;
+      return `<span class="chip">${esc(c.name)} · ${count} <button class="close-x" style="font-size:15px;margin-left:6px;color:var(--bad)" data-delclass="${c.id}" title="Delete class">&times;</button></span>`;
+    }).join("");
+    wrap.querySelectorAll("[data-delclass]").forEach(b=> b.addEventListener("click",()=>deleteClass(b.dataset.delclass)));
+  }
+
+  function renderStudents(){
+    const wrap = $("#studentsWrap");
+    if(!state.students.length){ wrap.innerHTML = '<div class="empty">No students yet. Add one above to get started.</div>'; return; }
+    let html = '<table><thead><tr><th>Student</th><th>Classes</th><th>Net points</th><th class="right">Actions</th></tr></thead><tbody>';
+    state.students.forEach(s=>{
+      const classes = s.classIds.map(cid=>{ const c=classById(cid); return c?`<span class="chip">${esc(c.name)}</span>`:""; }).join("") || '<span class="muted">No classes assigned</span>';
+      const net = state.records.filter(r=>r.studentId===s.id).reduce((a,r)=>a + (r.type==="good"?r.points:-r.points),0);
+      const cls = net>0?"pos":(net<0?"neg":"");
+      html += `<tr>
+        <td><strong>${esc(s.name)}</strong></td>
+        <td><div class="pill-list">${classes}</div></td>
+        <td><span class="pts ${cls}">${net>0?"+":""}${net}</span></td>
+        <td class="right">
+          <button class="btn ghost sm" data-manage="${s.id}">Manage classes</button>
+          <button class="btn danger sm" data-delstudent="${s.id}">Delete</button>
+        </td>
+      </tr>`;
+    });
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+    wrap.querySelectorAll("[data-manage]").forEach(b=> b.addEventListener("click",()=>openManage(b.dataset.manage)));
+    wrap.querySelectorAll("[data-delstudent]").forEach(b=> b.addEventListener("click",()=>deleteStudent(b.dataset.delstudent)));
+  }
+
+  /* ---------- manage classes modal ---------- */
+  let manageStudentId = null;
+  function openManage(studentId){
+    manageStudentId = studentId;
+    const s = studentById(studentId);
+    $("#manageTitle").textContent = "Classes for " + s.name;
+    const list = $("#manageClassList");
+    if(!state.classes.length){
+      list.innerHTML = '<div class="empty">No classes exist yet. Add a class first.</div>';
+    }else{
+      list.innerHTML = state.classes.map(c=>`
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line)">
+          <input type="checkbox" style="min-width:auto" value="${c.id}" ${s.classIds.includes(c.id)?"checked":""}>
+          <span>${esc(c.name)}</span>
+        </label>`).join("");
+    }
+    $("#manageOverlay").classList.add("open");
+  }
+  $("#saveManageBtn").addEventListener("click",()=>{
+    const s = studentById(manageStudentId);
+    s.classIds = Array.from($("#manageClassList").querySelectorAll("input:checked")).map(i=>i.value);
+    saveState(); renderAll();
+    $("#manageOverlay").classList.remove("open");
+  });
+  $$("[data-close-manage]").forEach(b=> b.addEventListener("click",()=> $("#manageOverlay").classList.remove("open")));
+
+  /* ---------- dashboard quick award ---------- */
+  function renderQuickStudent(){
+    const sel = $("#quickStudent");
+    if(!state.students.length){ sel.innerHTML = '<option value="">No students — add one first</option>'; return; }
+    sel.innerHTML = state.students.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  }
+  $("#quickGood").addEventListener("click",()=>openAward($("#quickStudent").value,"good"));
+  $("#quickBad").addEventListener("click",()=>openAward($("#quickStudent").value,"bad"));
+
+  function renderRecent(){
+    const wrap = $("#recentWrap");
+    if(!state.records.length){ wrap.innerHTML = '<div class="empty">No behaviour records yet. Award one above.</div>'; return; }
+    const recent = state.records.slice().sort((a,b)=>b.ts-a.ts).slice(0,15);
+    let html = '<table><thead><tr><th>When</th><th>Student</th><th>Class</th><th>Behaviour</th><th>Type</th><th class="right">Pts</th><th></th></tr></thead><tbody>';
+    recent.forEach(r=>{
+      const s = studentById(r.studentId); const c = classById(r.classId);
+      html += `<tr>
+        <td class="muted" style="white-space:nowrap">${fmtDateTime(r.ts)}</td>
+        <td><strong>${s?esc(s.name):"(deleted)"}</strong></td>
+        <td>${c?esc(c.name):'<span class="muted">—</span>'}</td>
+        <td>${esc(r.behaviour)}${r.note?`<div class="muted" style="font-size:12px">${esc(r.note)}</div>`:""}</td>
+        <td><span class="badge ${r.type}">${r.type==="good"?"👍 Good":"👎 Bad"}</span></td>
+        <td class="right"><span class="pts ${r.type==="good"?"pos":"neg"}">${r.type==="good"?"+":"−"}${r.points}</span></td>
+        <td class="right"><button class="btn danger sm" data-delrec="${r.id}">✕</button></td>
+      </tr>`;
+    });
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+    wrap.querySelectorAll("[data-delrec]").forEach(b=> b.addEventListener("click",()=>{
+      if(!confirm("Delete this record?")) return;
+      state.records = state.records.filter(r=>r.id!==b.dataset.delrec);
+      saveState(); renderAll();
+    }));
+  }
+
+  /* ---------- award modal ---------- */
+  let awardStudentId = null, awardType = "good", selectedBehaviour = null;
+  function openAward(studentId, type){
+    if(!studentId){ alert("Please add and select a student first."); return; }
+    awardStudentId = studentId;
+    awardType = type;
+    selectedBehaviour = null;
+    const s = studentById(studentId);
+    $("#awardStudentLabel").value = s.name;
+    $("#awardTitle").textContent = "Record Behaviour — " + s.name;
+    setAwardType(type);
+
+    // class picker limited to the student's classes
+    const sel = $("#awardClass");
+    const hint = $("#awardClassHint");
+    if(s.classIds.length){
+      sel.innerHTML = s.classIds.map(cid=>{ const c=classById(cid); return c?`<option value="${c.id}">${esc(c.name)}</option>`:""; }).join("");
+      hint.textContent = "";
+    }else{
+      sel.innerHTML = '<option value="">— no classes assigned —</option>';
+      hint.textContent = "This student isn't in any classes yet. Assign classes in the Students tab.";
+    }
+    $("#awardPoints").value = 1;
+    $("#awardNote").value = "";
+    $("#awardOverlay").classList.add("open");
+  }
+  function setAwardType(type){
+    awardType = type;
+    selectedBehaviour = null;
+    $$("#awardTypeSeg button").forEach(b=>{
+      b.classList.toggle("active", b.dataset.type===type);
+      b.classList.toggle("good-seg", type==="good");
+      b.classList.toggle("bad-seg", type==="bad");
+    });
+    const list = type==="good"?GOOD_BEHAVIOURS:BAD_BEHAVIOURS;
+    $("#behaviourGrid").innerHTML = list.map(b=>`<div class="b-opt ${type==="bad"?"bad-opt":""}" data-b="${esc(b)}">${esc(b)}</div>`).join("");
+    $$("#behaviourGrid .b-opt").forEach(opt=> opt.addEventListener("click",()=>{
+      $$("#behaviourGrid .b-opt").forEach(o=>o.classList.remove("selected"));
+      opt.classList.add("selected");
+      selectedBehaviour = opt.dataset.b;
+    }));
+  }
+  $$("#awardTypeSeg button").forEach(b=> b.addEventListener("click",()=>setAwardType(b.dataset.type)));
+
+  $("#saveAwardBtn").addEventListener("click",()=>{
+    const s = studentById(awardStudentId);
+    const classId = $("#awardClass").value;
+    if(!classId){ alert("Please select the class this behaviour happened in (assign the student to a class first)."); return; }
+    if(!selectedBehaviour){ alert("Please choose a behaviour."); return; }
+    let points = parseInt($("#awardPoints").value,10);
+    if(isNaN(points)||points<0) points = 1;
+    state.records.push({
+      id: uid(),
+      studentId: awardStudentId,
+      classId,
+      type: awardType,
+      behaviour: selectedBehaviour,
+      points,
+      note: $("#awardNote").value.trim(),
+      ts: Date.now()
+    });
+    saveState(); renderAll();
+    $("#awardOverlay").classList.remove("open");
+  });
+  $$("[data-close]").forEach(b=> b.addEventListener("click",()=> $("#awardOverlay").classList.remove("open")));
+  $$(".overlay").forEach(o=> o.addEventListener("click",e=>{ if(e.target===o) o.classList.remove("open"); }));
+
+  /* ---------- reports ---------- */
+  $("#reportPeriod").addEventListener("change",()=>{
+    const custom = $("#reportPeriod").value==="custom";
+    $("#fromWrap").style.display = custom?"":"none";
+    $("#toWrap").style.display = custom?"":"none";
+  });
+  function renderReportClassOptions(){
+    const sel = $("#reportClass");
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All classes</option>' + state.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+    sel.value = cur;
+  }
+  function getRange(){
+    const period = $("#reportPeriod").value;
+    const now = new Date();
+    let from, to, label;
+    if(period==="day"){
+      from = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      to = new Date(from.getTime()+86400000-1);
+      label = "Today — " + fmtDate(from.getTime());
+    }else if(period==="week"){
+      to = new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,999);
+      from = new Date(to.getTime()-6*86400000); from.setHours(0,0,0,0);
+      label = "Last 7 days — " + fmtDate(from.getTime()) + " to " + fmtDate(to.getTime());
+    }else if(period==="month"){
+      to = new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,999);
+      from = new Date(to.getTime()-29*86400000); from.setHours(0,0,0,0);
+      label = "Last 30 days — " + fmtDate(from.getTime()) + " to " + fmtDate(to.getTime());
+    }else{
+      const f = $("#reportFrom").value, t = $("#reportTo").value;
+      if(!f||!t){ return null; }
+      from = new Date(f+"T00:00:00");
+      to = new Date(t+"T23:59:59.999");
+      label = "Custom — " + fmtDate(from.getTime()) + " to " + fmtDate(to.getTime());
+    }
+    return { from:from.getTime(), to:to.getTime(), label };
+  }
+
+  function generateReport(){
+    const range = getRange();
+    const area = $("#reportArea");
+    if(!range){ area.innerHTML = '<div class="empty">Please choose both a start and end date.</div>'; return; }
+    const classFilter = $("#reportClass").value;
+    let recs = state.records.filter(r=> r.ts>=range.from && r.ts<=range.to);
+    if(classFilter) recs = recs.filter(r=>r.classId===classFilter);
+    recs.sort((a,b)=>a.ts-b.ts);
+
+    const goodCount = recs.filter(r=>r.type==="good").length;
+    const badCount = recs.filter(r=>r.type==="bad").length;
+    const goodPts = recs.filter(r=>r.type==="good").reduce((a,r)=>a+r.points,0);
+    const badPts = recs.filter(r=>r.type==="bad").reduce((a,r)=>a+r.points,0);
+    const net = goodPts - badPts;
+
+    const classLabel = classFilter ? (classById(classFilter)?.name || "") : "All classes";
+
+    let html = `<div class="report-meta"><strong>Period:</strong> ${esc(range.label)} &nbsp;·&nbsp; <strong>Class:</strong> ${esc(classLabel)} &nbsp;·&nbsp; <strong>Generated:</strong> ${fmtDateTime(Date.now())}</div>`;
+
+    html += `<div class="summary-cards">
+      <div class="card"><div class="num" style="color:var(--good)">${goodCount}</div><div class="lbl">Good behaviours (+${goodPts} pts)</div></div>
+      <div class="card"><div class="num" style="color:var(--bad)">${badCount}</div><div class="lbl">Bad behaviours (−${badPts} pts)</div></div>
+      <div class="card"><div class="num">${recs.length}</div><div class="lbl">Total records</div></div>
+      <div class="card"><div class="num" style="color:${net>=0?'var(--good)':'var(--bad)'}">${net>0?"+":""}${net}</div><div class="lbl">Net points</div></div>
+    </div>`;
+
+    if(!recs.length){
+      html += '<div class="empty">No behaviour records in this period.</div>';
+      area.innerHTML = html; return;
+    }
+
+    // per-student summary
+    const byStudent = {};
+    recs.forEach(r=>{
+      const key = r.studentId;
+      if(!byStudent[key]) byStudent[key] = { good:0, bad:0, gp:0, bp:0 };
+      if(r.type==="good"){ byStudent[key].good++; byStudent[key].gp+=r.points; }
+      else { byStudent[key].bad++; byStudent[key].bp+=r.points; }
+    });
+    html += "<h3>Summary by student</h3>";
+    html += '<table><thead><tr><th>Student</th><th class="right">Good</th><th class="right">Bad</th><th class="right">Net pts</th></tr></thead><tbody>';
+    Object.keys(byStudent).sort((a,b)=>{
+      return (byStudent[b].gp-byStudent[b].bp)-(byStudent[a].gp-byStudent[a].bp);
+    }).forEach(sid=>{
+      const d = byStudent[sid]; const s = studentById(sid); const n = d.gp-d.bp;
+      html += `<tr><td><strong>${s?esc(s.name):"(deleted)"}</strong></td>
+        <td class="right" style="color:var(--good)">${d.good}</td>
+        <td class="right" style="color:var(--bad)">${d.bad}</td>
+        <td class="right"><span class="pts ${n>=0?'pos':'neg'}">${n>0?"+":""}${n}</span></td></tr>`;
+    });
+    html += "</tbody></table>";
+
+    // full log
+    html += "<h3>Detailed log</h3>";
+    html += '<table><thead><tr><th>Date &amp; time</th><th>Student</th><th>Class</th><th>Behaviour</th><th>Type</th><th class="right">Pts</th></tr></thead><tbody>';
+    recs.forEach(r=>{
+      const s = studentById(r.studentId); const c = classById(r.classId);
+      html += `<tr>
+        <td style="white-space:nowrap">${fmtDateTime(r.ts)}</td>
+        <td>${s?esc(s.name):"(deleted)"}</td>
+        <td>${c?esc(c.name):"—"}</td>
+        <td>${esc(r.behaviour)}${r.note?`<div class="muted" style="font-size:12px">${esc(r.note)}</div>`:""}</td>
+        <td><span class="badge ${r.type}">${r.type==="good"?"👍 Good":"👎 Bad"}</span></td>
+        <td class="right"><span class="pts ${r.type==="good"?'pos':'neg'}">${r.type==="good"?"+":"−"}${r.points}</span></td>
+      </tr>`;
+    });
+    html += "</tbody></table>";
+
+    area.innerHTML = html;
+  }
+  $("#genReportBtn").addEventListener("click", generateReport);
+  $("#printReportBtn").addEventListener("click",()=>{
+    if(!$("#reportArea").innerHTML.trim() || $("#reportArea").querySelector(".empty")) generateReport();
+    setTimeout(()=>window.print(),100);
+  });
+
+  /* ---------- render all ---------- */
+  function renderStats(){
+    $("#statStudents").textContent = state.students.length;
+    $("#statClasses").textContent = state.classes.length;
+    $("#statRecords").textContent = state.records.length;
+  }
+  function renderAll(){
+    renderStats();
+    renderClassPills();
+    renderStudents();
+    renderQuickStudent();
+    renderRecent();
+    renderReportClassOptions();
+  }
+
+  // keyboard: Esc closes modals
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ $$(".overlay").forEach(o=>o.classList.remove("open")); } });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
